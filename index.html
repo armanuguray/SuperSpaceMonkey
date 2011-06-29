@@ -1,28 +1,23 @@
 <!DOCTYPE html>
 <html>
     <head>
-       <title>CS123: Camtrans Demo</title>
-       <link type="text/css" href="jquery/css/ui-lightness/jquery-ui-1.8.13.custom.css" rel="stylesheet"/>
-       <link type="text/css" href="style.css" rel="stylesheet"/>
-       <script type="text/javascript" src="jquery/js/jquery-1.5.1.min.js"></script>
-       <script type="text/javascript" src="jquery/js/jquery-ui-1.8.13.custom.min.js"></script>
-       <script type="text/javascript" src="script.js"></script>
+        <title>CS123: Camtrans Demo</title>
+        <link type="text/css" href="jquery/css/ui-lightness/jquery-ui-1.8.13.custom.css" rel="stylesheet"/>
+        <link type="text/css" href="style.css" rel="stylesheet"/>
+        <script type="text/javascript" src="jquery/js/jquery-1.5.1.min.js"></script>
+        <script type="text/javascript" src="jquery/js/jquery-ui-1.8.13.custom.min.js"></script>
+        <script type="text/javascript" src="js/script.js"></script>
+        <script type="text/javascript">
+            $(main());
+//    $( "#control-panel" ).html('<a href="http://www.google.com">Googley</a>');
+        </script>
     </head>
-    <body onload="main()">
+    <body>
         <!-- Frustum View -->
         <div id="frustum-view"></div>
         <!-- Camera View -->
         <div id="camera-view" class="ui-widget-content"></div>
         <!-- Controls -->
         <div id="control-panel"></div>
-
-<!--
-<div class="demo">
-	
-<div id="resizable" class="ui-widget-content">
-	<h3 class="ui-widget-header">Resizable</h3>
-</div>
-
-</div><!-- End demo -->
     </body>
 </html>
