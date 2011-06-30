@@ -18,17 +18,14 @@ function main() {
         // add widgets
         $( "#control-panel" ).html(
                         '<div> \
-                            <h3><a href="#">First</a></h3> \
-                            <div>Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.</div> \
+                            <h3><a href="#">Field of View</a></h3> \
+                            <div>Width <div id="slider" /></div> \
                         </div> \
                         <div> \
-                            <h3><a href="#">Second</a></h3> \
+                            <h3><a href="#">Clipping</a></h3> \
                             <div>Phasellus mattis tincidunt nibh.</div> \
-                        </div> \
-                        <div> \
-                            <h3><a href="#">Third</a></h3> \
-                            <div>Nam dui erat, auctor a, dignissim quis.</div> \
                         </div>');
-        $( "#control-panel" ).accordion({ header: "h3" });    
+        $( "#control-panel" ).accordion({ header: "h3" });
+        $( "#slider" ).slider(); 
     });
 }
