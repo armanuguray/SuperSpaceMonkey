@@ -4,6 +4,11 @@
 function main() {
     // setup the UI
     $(function () {
+        // reset body content
+        $('body').html('<div id="frustum-view"></div> \
+                        <div id="camera-view" class="ui-widget-content"></div> \
+                        <div id="control-panel"></div> \
+                        <div id="camtrans-panel"></div>');
         var dr_options = { containment: 'window' };
         var rs_options = { minWidth: 300,
                            minHeight: 200,
