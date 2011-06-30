@@ -26,8 +26,8 @@ body {
 #control-panel {
     position: fixed;
     z-index: 2;
-    width: 300px;
-    opacity: 0.7;
+    width: 320px;
+    opacity: 0.8;
     border-radius: 4px;
     -khtml-border-radius: 4px;
     -moz-border-radius: 4px;
@@ -38,8 +38,29 @@ body {
     -webkit-box-shadow: 0 3px 6px rgba(0, 0, 0, 1);
 }
 
-.ui-accordion-header {
- //   background: transparent;
-    
+#control-panel .content {
+    padding: 10px 15px 10px 15px;
+    font-size: 0.9em;
+    height: 110px;
+}
+
+#control-panel .content .region {
+}
+
+#control-panel .slider {
+    height: 6px;
+    margin: 5px 0 5px 0;
+}
+
+#control-panel .content .amount {
+    border:0; 
+    color:#f6931f; 
+    font-weight:bold;
+    background-color: transparent;
+}
+
+#control-panel .ui-slider-horizontal .ui-slider-handle {
+    height: 14px;
+    width: 11px;
 }
 
