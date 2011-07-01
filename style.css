@@ -18,8 +18,8 @@ body {
     z-index: 1;
     bottom: 10px;
     right: 10px;
-    height: 280px;
-    width: 400px;
+    height: 200px;
+    width: 300px;
     border: 1px solid black;
 }
 
@@ -63,4 +63,37 @@ body {
     height: 14px;
     width: 11px;
 }
+
+#camtrans-slider-panel {
+    position: fixed;
+    z-index: 3;
+    height: 80px;
+    width: 600px;
+    opacity: 0.8;
+    bottom: 10px;
+    padding: 0 15px 0 15px;
+    border-radius: 4px;
+    -khtml-border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 1);
+    -khtml-box-shadow: 0 3px 6px rgba(0, 0, 0, 1);
+    -moz-box-shadow: 0 3px 6px rgba(0, 0, 0, 1);
+    -webkit-box-shadow: 0 3px 6px rgba(0, 0, 0, 1);
+}
+
+#camtrans-slider-panel .slider {
+    height: 10px;
+}
+
+#camtrans-slider-panel .ui-slider-horizontal .ui-slider-handle {
+    height: 18px;
+    width: 11px;
+}
+
+#camtrans-slider-panel p {
+    color:#f6931f;
+    font-family: Verdana, Arial, sans-serif; 
+}
+
 

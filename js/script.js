@@ -5,10 +5,16 @@ function main() {
     // setup the UI
     $(function () {
         // reset body content
-        $('body').html('<div id="frustum-view"></div> \
-                        <div id="camera-view" class="ui-widget-content"></div> \
-                        <div id="control-panel"></div> \
-                        <div id="camtrans-panel"></div>');
+        var ids = [ 'frustum-view', 'camera-view', 'camtrans-slider-panel', 'control-panel' ];
+        var classes = [ '', 'ui-widget-content', 'ui-widget-content', '' ];
+        var markup = '';
+        for (var i = 0; i < 4; i++) {
+            markup += '<div id="' + ids[i] +'"';
+            var c = classes[i];
+            if (c != '') markup += 'class="' + c + '"';
+            markup += '/>';
+        }
+        $('body').html(markup);
         var dr_options = { containment: 'window' };
         var rs_options = { minWidth: 300,
                            minHeight: 200,
@@ -20,38 +26,29 @@ function main() {
         /* Control Panel */
         // make draggable
         $( "#control-panel" ).draggable(dr_options);
+
         // create markup
-        $( "#control-panel" ).html(
-                        '<div> \
-                            <h3><a href="#">Field of View</a></h3> \
-                            <div class="content"> \
-                                <div class="region" style="margin-bottom: 20px"> \
-                                    <label for="width-amount">Width:</label> \
-	                                <input type="text" id="width-amount" class="amount" readonly="readonly"/> \
-                                    <div id="width-slider" class="slider"/> \
-                                </div> \
-                                <div class="region"> \
-                                    <label for="height-amount">Height:</label> \
-	                                <input type="text" id="height-amount" class="amount" readonly="readonly"/> \
-                                    <div id="height-slider" class="slider"/> \
-                                </div> \
-                            </div> \
-                        </div> \
-                        <div> \
-                            <h3><a href="#">Clipping</a></h3> \
-                            <div class="content"> \
-                                <div class="region" style="margin-bottom: 20px"> \
-                                    <label for="near-amount">Near:</label> \
-	                                <input type="text" id="near-amount" class="amount" readonly="readonly"/> \
-                                    <div id="near-slider" class="slider"/> \
-                                </div> \
-                                <div class="region"> \
-                                    <label for="far-amount">Far:</label> \
-	                                <input type="text" id="far-amount" class="amount" readonly="readonly"/> \
-                                    <div id="far-slider" class="slider"/> \
-                                </div> \
-                            </div> \
-                        </div>');
+        markup = '';
+        var section_titles = [ 'Field of View', 'Clipping' ];
+        var content_titles = [[ 'Width:', 'Height:' ], [ 'Near:', 'Far:' ]];
+        var content_ids = [[ 'width', 'height' ], [ 'near', 'far' ]];
+        for (var i = 0; i < 2; i++) {
+            markup += '<div><h3><a href="#">' + section_titles[i] + '</a></h3><div class="content">';
+            var titles = content_titles[i];
+            var ids = content_ids[i];
+            for (var j = 0; j < 2; j++) {
+                var id = ids[j];
+                markup += '<div class="region"';
+                if (j == 0) markup += 'style="margin-bottom: 20px"';
+                markup += '><label for="' + id + '-amount">' + titles[j] + '</label> \
+                            <input type="text" id="' + id + '-amount" class="amount" readonly="readonly"/> \
+                            <div id="' + id + '-slider" class="slider"/></div>';
+            }
+            markup += '</div></div>';
+        }
+        
+        $( "#control-panel" ).html(markup);
+
         // setup accordion
         $( "#control-panel" ).accordion({ header: "h3" });
         
@@ -62,7 +59,7 @@ function main() {
                                max: 4.0,
                                step: 0.1,
                                value: default_value,
-                               slide: function(event, ui) {
+                               slide: function (event, ui) {
                                           $("#width-amount").val(ui.value);
                                }};
         $( "#width-amount" ).val(default_value);
@@ -70,11 +67,31 @@ function main() {
         $( "#near-amount" ).val(default_value);
         $( "#far-amount" ).val(default_value);
         $( "#width-slider" ).slider(slider_options);
-        slider_options['slide'] = function(event, ui) { $("#height-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#height-amount").val(ui.value); };
         $( "#height-slider" ).slider(slider_options);
-        slider_options['slide'] = function(event, ui) { $("#near-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#near-amount").val(ui.value); };
         $( "#near-slider" ).slider(slider_options);
-        slider_options['slide'] = function(event, ui) { $("#far-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#far-amount").val(ui.value); };
         $( "#far-slider" ).slider(slider_options);
+
+        /* Transformation Slider Panel */
+        $("#camtrans-slider-panel").draggable(dr_options);
+        $("#camtrans-slider-panel").html('<p id="trans-step"></p> \
+                                          <div class="slider"/>');
+        var trans_steps = [ 'World-Space',
+                            'Translate to origin',
+                            'Align to the negative Z axis',
+                            'Square up the view volume',
+                            'Bring the far clipping plane to z = -1',
+                            'Unhinge the viewing volume' ];
+        slider_options = { range: 'min',
+                           min: 0,
+                           max: 5,
+                           value: 0,
+                           slide: function (event, ui) {
+                                $("#trans-step").html(trans_steps[ui.value]);
+                           }};
+        $("#camtrans-slider-panel .slider").slider(slider_options);
+        $("#trans-step").html(trans_steps[0]);
     });
 }
