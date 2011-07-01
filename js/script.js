@@ -1,4 +1,14 @@
 /**
+ * @author Arman Uguray
+ */
+
+/**
+ * gl1: WebGL context for the main canvas that displays the frustum.
+ * gl2: WebGL context for the secondary canvas that displays the camera preview.
+ */
+var gl1, gl2;
+
+/**
  * Main method.
  */
 function main() {
@@ -93,5 +103,7 @@ function main() {
                            }};
         $("#camtrans-slider-panel .slider").slider(slider_options);
         $("#trans-step").html(trans_steps[0]);
+
+        ///TODO: Setup the gl contexts, change markup to show a message if WebGL is not available
     });
 }

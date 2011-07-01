@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
         <title> CS123: Camtrans Demo </title>
         <link type="text/css" href="jquery/css/ui-lightness/jquery-ui-1.8.13.custom.css" rel="stylesheet"/>
         <link type="text/css" href="style.css" rel="stylesheet"/>
         <script type="text/javascript" src="jquery/js/jquery-1.5.1.min.js"></script>
         <script type="text/javascript" src="jquery/js/jquery-ui-1.8.13.custom.min.js"></script>
+        <script type="text/javascript" src="js/webgl.js"></script>
         <script type="text/javascript" src="js/script.js"></script>
         <script type="text/javascript">
             $(main());
@@ -13,20 +15,20 @@
     </head>
     <body>
         <!-- Show error message if JavaScript is not enabled -->
+        <style type="text/css">
+            body {
+                background: gray;
+            }
+            p {
+                color: white;
+                text-align: center;
+                font-style: Verdana, Arial, sans-serif;
+                font-size: 1.2em;
+            }
+        </style>
+        <p> Loading... </p>
         <noscript>
-            <style type="text/css">
-                body {
-                    background: gray;
-                }
-                p {
-                    color: white;
-                    text-align: center;
-                    font-style: Verdana, Arial, sans-serif;
-                    font-size: 1.2em;
-                }
-            </style>
-            <p> Your browser currently doesn't support JavaScript. Please turn on JavaScript and 
-                make sure you are using one of the latest browsers (e.g. Chrome, Firefox, Safari). </p>
+            <p> Please make sure that JavaScript is enabled on your web browser. </p>
         </noscript>
     </body>
 </html>
