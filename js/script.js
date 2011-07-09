@@ -6,7 +6,7 @@
  * gl1: WebGL context for the main canvas that displays the frustum.
  * gl2: WebGL context for the secondary canvas that displays the camera preview.
  */
-var gl1, gl2;
+
 
 /**
  * Main method.
@@ -29,6 +29,7 @@ function main() {
         var rs_options = { minWidth: 300,
                            minHeight: 200,
                            containment: 'document' };
+
         /* Camera View */
         $( "#camera-view" ).draggable(dr_options);
         $( "#camera-view" ).resizable(rs_options);
@@ -105,5 +106,12 @@ function main() {
         $("#trans-step").html(trans_steps[0]);
 
         ///TODO: Setup the gl contexts, change markup to show a message if WebGL is not available
+        $('#frustum-view').html('<canvas id="frustum-canvas"></canvas>');
+        $('#camera-view').append('<canvas id="camera-canvas"></canvas>');
+        $('#frustum-canvas')[0].width = $('#frustum-canvas')[0].clientWidth;
+        $('#frustum-canvas')[0].height = $('#frustum-canvas')[0].clientHeight;
+        renderer = new Renderer($('#frustum-canvas')[0], $('#camera-canvas')[0]);
+
+        window.onresize = function() { renderer.resize(); };
     });
 }
