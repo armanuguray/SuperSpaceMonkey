@@ -4,7 +4,7 @@
 
 J3DIVector3.prototype.normalize = function() {
     var len = this.vectorLength();
-    this.load(this.x / len, this.y / len, this.z / len);
+    this.load(this[0] / len, this[1] / len, this[2] / len);
     return this;
 };
 
@@ -77,16 +77,25 @@ WebGLUtils = new function() {
 };
 
 /**
- * This class represents a camera used for rendering
+ * This class represents a camera used for rendering.
  */
 function Camera() {
     this.modelview = new J3DIMatrix4();
     this.projection = new J3DIMatrix4();
     this.modelview.makeIdentity();
     this.projection.makeIdentity();
+
+    this.eye = new J3DIVector3(0,0,0);
+    this.look = new J3DIVector3(0,0,0);
+    this.up = new J3DIVector3(0,0,0);
 }
 
 Camera.prototype.lookAt = function(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz) {
+    this.eye.load(eyex, eyey, eyez);
+    this.look.load(centerx - eyex, centery - eyey, centerz - eyez);
+    this.look.normalize();
+    this.up.load(upx, upy, upz);
+
     this.modelview.makeIdentity();
     this.modelview.lookat(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
 };
@@ -94,6 +103,19 @@ Camera.prototype.lookAt = function(eyex, eyey, eyez, centerx, centery, centerz, 
 Camera.prototype.perspective = function(fovy, aspect, near, far) {
     this.projection.makeIdentity();
     this.projection.perspective(fovy, aspect, near, far);
+};
+
+Camera.prototype.originOrbitingLookVectorTranslate = function(delta) {
+    var x = this.eye[0] + delta * this.look[0],
+        y = this.eye[1] + delta * this.look[1],
+        z = this.eye[2] + delta * this.look[2];
+
+    var dist = Math.sqrt(x*x + y*y + z*z);
+    if (dist >= 1.0 && dist <= 16.0) {
+        this.lookAt(x,y,z,
+                    0,0,0,
+                    0,1,0);
+    }
 };
 
 /**
@@ -248,7 +270,7 @@ function Renderer(canvas1, canvas2) {
         this.renderContext2();
     };
 
-    this.resize = function () {
+    this.resize = function() {
         var cw1 = $('#frustum-canvas')[0].clientWidth,
             ch1 = $('#frustum-canvas')[0].clientHeight;
         
@@ -259,6 +281,14 @@ function Renderer(canvas1, canvas2) {
         this.contexts[0].viewportHeight = ch1;
         this.contexts[0].viewport(0, 0, cw1, ch1);
         this.dolleyCamera.perspective(45, cw1/ch1, 0.1, 1000);
+    };
+
+    this.handleMouseDrag = function(event) {
+        alert("lala");
+    };
+
+    this.handleMouseWheel = function(event) {
+        this.dolleyCamera.originOrbitingLookVectorTranslate(0.0005 * event.wheelDelta);
     };
 
     initializeGL(this.contexts[0]);
