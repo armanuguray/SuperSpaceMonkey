@@ -106,7 +106,10 @@ function main() {
         $("#trans-step").html(trans_steps[0]);
 
         ///TODO: Setup the gl contexts, change markup to show a message if WebGL is not available
-        $('#frustum-view').html('<canvas id="frustum-canvas" onmousedown="return renderer.handleMouseDrag(event)" onmousewheel="return renderer.handleMouseWheel(event)"></canvas>');
+        $('#frustum-view').html('<canvas id="frustum-canvas" onmousedown="return renderer.handleMouseDown(event)"' +
+                                                            'onmousemove="return renderer.handleMouseMove(event)"' +
+                                                            'onmouseup="return renderer.handleMouseUp(event)"' +
+                                                            'onmousewheel="return renderer.handleMouseWheel(event)"></canvas>');
         $('#camera-view').append('<canvas id="camera-canvas"></canvas>');
         $('#frustum-canvas')[0].width = $('#frustum-canvas')[0].clientWidth;
         $('#frustum-canvas')[0].height = $('#frustum-canvas')[0].clientHeight;

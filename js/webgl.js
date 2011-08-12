@@ -8,6 +8,23 @@ J3DIVector3.prototype.normalize = function() {
     return this;
 };
 
+J3DIVector3.prototype.multVecW0Matrix = function(matrix)
+{
+    var x = this[0];
+    var y = this[1];
+    var z = this[2];
+
+    this[0] = x * matrix.$matrix.m11 + y * matrix.$matrix.m21 + z * matrix.$matrix.m31;
+    this[1] = x * matrix.$matrix.m12 + y * matrix.$matrix.m22 + z * matrix.$matrix.m32;
+    this[2] = x * matrix.$matrix.m13 + y * matrix.$matrix.m23 + z * matrix.$matrix.m33;
+    var w = x * matrix.$matrix.m14 + y * matrix.$matrix.m24 + z * matrix.$matrix.m34;
+    if (w != 1 && w != 0) {
+        this[0] /= w;
+        this[1] /= w;
+        this[2] /= w;
+    }
+}
+
 /**
  * This is an object that encapsulates initializing a WebGL context and shader programs.
  */
@@ -118,6 +135,29 @@ Camera.prototype.originOrbitingLookVectorTranslate = function(delta) {
     }
 };
 
+Camera.prototype.originOrbitingRotate = function(deltaX, deltaY) {
+    // TODO: fix this
+    var mv = new J3DIMatrix4(this.modelview);
+    var matrix = new J3DIMatrix4(this.projection);
+    matrix.multiply(mv);
+    matrix.invert();
+
+    vec = new J3DIVector3(deltaX, deltaY, 0);
+    vec.normalize();
+    vec.multVecMatrix(matrix);
+    vec.load(-this.eye[0] + vec[0], -this.eye[1] + vec[1], -this.eye[2] + vec[2]);
+    vec.normalize();
+
+    vec.cross(this.look);
+    vec.normalize();
+    matrix.makeIdentity();
+    matrix.rotate(0.1 * Math.sqrt(deltaX*deltaX + deltaY*deltaY), vec[0], vec[1], vec[2]);
+    this.eye.multVecMatrix(matrix);
+    this.lookAt(this.eye[0], this.eye[1], this.eye[2],
+                0,0,0,
+                0,1,0);
+};
+
 /**
  * This is a camera that maintains individual camera matrices to demo individual transformation steps
  */
@@ -175,32 +215,36 @@ function Renderer(canvas1, canvas2) {
     var loadShaderProgram = function(context) {
 
         var vertex = "attribute vec3 a_position;" +
+                     "attribute vec3 a_color;" +
                      "uniform mat4 u_modelview;" +
                      "uniform mat4 u_projection;" +
                      "uniform mat4 u_ctm;" +
+                     "varying vec3 color;" +
                      "void main() {" +
+                     "  color = a_color;" +
                      "  gl_Position = u_projection * u_modelview * u_ctm * vec4(a_position, 1.0);" +
                      "}";
         var frag = "#ifdef GL_ES\n" +
                    "precision highp float;\n" +
                    "#endif\n" +
+                   "varying vec3 color;" +
                    "void main() {" +
-                   "    gl_FragColor = vec4(0.0,0.0,0.0, 1.0);" +
+                   "    gl_FragColor = vec4(color, 1.0);" +
                    "}";
         context.program = WebGLUtils.loadShaderProgram(context, vertex, frag);
         var prog = context.program;
         context.useProgram(prog);
         prog.position_handle = context.getAttribLocation(prog, "a_position");
+        prog.color_handle = context.getAttribLocation(prog, "a_color");
         context.enableVertexAttribArray(prog.position_handle);
         prog.modelview_handle = context.getUniformLocation(prog, "u_modelview");
         prog.projection_handle = context.getUniformLocation(prog, "u_projection");
         prog.ctm_handle = context.getUniformLocation(prog, "u_ctm");
-        prog.color_handle = context.getUniformLocation(prog, "u_color");
     };
 
     var initializeGL = function(context) {
         context.clearColor(1.0, 1.0, 1.0, 1.0);
-        // TODO: depth test and stuff
+        // TODO: depth test, blending  and stuff
         context.enable(context.DEPTH_TEST);
         loadShaderProgram(context);
         context.viewport(0, 0, context.viewportWidth, context.viewportHeight);
@@ -215,23 +259,41 @@ function Renderer(canvas1, canvas2) {
         var grid = [];
         var x, z;
         var width = 2.0;
-        var segments = 8.0;
+        var segments = 12.0;
         x = -width * segments/2.0;
         z = x;
         for (var i = 0; i <= segments; i++) {
             grid.push(x, 0, z);
+            grid.push(0, 0, 0);
             grid.push(x + segments*width, 0, z);
+            grid.push(0, 0, 0);
             z += width;
         }
         z = x;
         for (var i = 0; i <= segments; i++) {
             grid.push(x, 0, z);
+            grid.push(0, 0, 0);
             grid.push(x, 0, z + segments*width);
+            grid.push(0, 0, 0);
             x += width;
         }
+
+        // add major axes
+        // x-axis
+        grid.push(0,0,0); grid.push(0,0,1);
+        grid.push(3,0,0); grid.push(0,0,1);
+
+        // y-axis
+        grid.push(0,0,0); grid.push(0,1,0);
+        grid.push(0,3,0); grid.push(0,1,0);
+
+        // z-axis
+        grid.push(0,0,0); grid.push(1,0,0);
+        grid.push(0,0,3); grid.push(1,0,0);
+
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid), gl.STATIC_DRAW);
-        renderer.grid.itemSize = 3;
-        renderer.grid.numItems = grid.length/3;
+        renderer.grid.itemSize = 6;
+        renderer.grid.numItems = grid.length/6;
     };
 
     this.initializeCameras = function() {
@@ -249,13 +311,17 @@ function Renderer(canvas1, canvas2) {
         gl.useProgram(gl.program);
 
         // render grid
+        gl.disable(gl.DEPTH_TEST);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.grid);
-        gl.vertexAttribPointer(gl.program.position_handle, this.grid.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(gl.program.position_handle, 3, gl.FLOAT, false, 4 * renderer.grid.itemSize, 0);
         gl.enableVertexAttribArray(gl.program.position_handle);
+        gl.vertexAttribPointer(gl.program.color_handle, 3, gl.FLOAT, false, 4 * renderer.grid.itemSize, 4*3);
+        gl.enableVertexAttribArray(gl.program.color_handle);
         gl.uniformMatrix4fv(gl.program.modelview_handle, false, this.dolleyCamera.modelview.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.projection_handle, false, this.dolleyCamera.projection.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.identity.getAsFloat32Array());
         gl.drawArrays(gl.LINES, 0, this.grid.numItems);
+        gl.enable(gl.DEPTH_TEST);
 
         gl.flush();
     };
@@ -283,8 +349,23 @@ function Renderer(canvas1, canvas2) {
         this.dolleyCamera.perspective(45, cw1/ch1, 0.1, 1000);
     };
 
-    this.handleMouseDrag = function(event) {
-        alert("lala");
+    this.mouseIsDown = false;
+    this.handleMouseDown = function(event) {
+        this.oldMouseX = event.x;
+        this.oldMouseY = event.y;
+        this.mouseIsDown = true;
+    };
+
+    this.handleMouseMove = function(event) {
+        if (this.oldMouseX != undefined && this.mouseIsDown) {
+            this.dolleyCamera.originOrbitingRotate(event.x - this.oldMouseX, -event.y + this.oldMouseY);
+            this.oldMouseX = event.x;
+            this.oldMouseY = event.y;
+        }
+    };
+
+    this.handleMouseUp = function(event) {
+        this.mouseIsDown = false;
     };
 
     this.handleMouseWheel = function(event) {

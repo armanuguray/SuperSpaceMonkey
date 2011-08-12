@@ -1025,9 +1025,12 @@ J3DIVector3.prototype.divide = function(divisor)
 
 J3DIVector3.prototype.cross = function(v)
 {
-    this[0] =  this[1] * v[2] - this[2] * v[1];
-    this[1] = -this[0] * v[2] + this[2] * v[0];
-    this[2] =  this[0] * v[1] - this[1] * v[0];
+    var x = this[1] * v[2] - this[2] * v[1],
+        y = this[2] * v[0] - this[0] * v[2],
+        z = this[0] * v[1] - this[1] * v[0];
+    this[0] =  x;
+    this[1] =  y;
+    this[2] =  z;
 }
 
 J3DIVector3.prototype.dot = function(v)
