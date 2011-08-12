@@ -253,49 +253,72 @@ function Renderer(canvas1, canvas2) {
     var initializeBuffers1 = function(renderer) {
         var gl = renderer.contexts[0];
 
-        // create the buffer that holds the grid
-        renderer.grid = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, renderer.grid);
-        var grid = [];
+        // create the buffer that holds all vertex data
+        renderer.buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffer);
+        var buffer = [];
         var x, z;
         var width = 2.0;
         var segments = 12.0;
         x = -width * segments/2.0;
         z = x;
         for (var i = 0; i <= segments; i++) {
-            grid.push(x, 0, z);
-            grid.push(0, 0, 0);
-            grid.push(x + segments*width, 0, z);
-            grid.push(0, 0, 0);
+            buffer.push(x, 0, z);
+            buffer.push(0, 0, 0);
+            buffer.push(x + segments*width, 0, z);
+            buffer.push(0, 0, 0);
             z += width;
         }
         z = x;
         for (var i = 0; i <= segments; i++) {
-            grid.push(x, 0, z);
-            grid.push(0, 0, 0);
-            grid.push(x, 0, z + segments*width);
-            grid.push(0, 0, 0);
+            buffer.push(x, 0, z);
+            buffer.push(0, 0, 0);
+            buffer.push(x, 0, z + segments*width);
+            buffer.push(0, 0, 0);
             x += width;
         }
 
         // add major axes
+        // vertex:           color:
         // x-axis
-        grid.push(0,0,0); grid.push(0,0,1);
-        grid.push(3,0,0); grid.push(0,0,1);
+        buffer.push(0,0,0); buffer.push(1,0,0);
+        buffer.push(3,0,0); buffer.push(1,0,0);
 
         // y-axis
-        grid.push(0,0,0); grid.push(0,1,0);
-        grid.push(0,3,0); grid.push(0,1,0);
+        buffer.push(0,0,0); buffer.push(0,1,0);
+        buffer.push(0,3,0); buffer.push(0,1,0);
 
         // z-axis
-        grid.push(0,0,0); grid.push(1,0,0);
-        grid.push(0,0,3); grid.push(1,0,0);
+        buffer.push(0,0,0); buffer.push(0,0,1);
+        buffer.push(0,0,3); buffer.push(0,0,1);
 
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid), gl.STATIC_DRAW);
-        renderer.grid.itemSize = 6;
-        renderer.grid.numItems = grid.length/6;
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
+        renderer.buffer.gridItemSize = 3;
+        renderer.buffer.gridStride = 6;
+        renderer.buffer.gridNumItems = buffer.length/6;
     };
 
+    /* create buffer that holds the tips of the axes 
+        renderer.axes = gl.createBuffer();
+        var axes = [];
+        var res = 8,
+            radius = 0.5,
+            height = 0.5;
+        var angle = 0,
+            incr = 2 * Math.PI / res;
+
+        // x axis
+        axes.push(axisLength + height, 0, 0); axes.push(1, 0, 0);
+        for (var i = 0; i <= res; i++) {
+            axes.push(axisLength, Math.sin(angle), Math.cos(angle)); axes.push(1, 0, 0);
+            angle += incr;
+        }
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(axes), gl.STATIC_DRAW);
+        renderer.axes.itemSize = 3;
+        renderer.grid.stride = 6;
+        renderer.grid.numItems = grid.length/6;
+*/
     this.initializeCameras = function() {
         this.dolleyCamera = new Camera();
         this.dolleyCamera.lookAt(4,4,4, 0,0,0, 0,1,0);
@@ -312,15 +335,15 @@ function Renderer(canvas1, canvas2) {
 
         // render grid
         gl.disable(gl.DEPTH_TEST);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.grid);
-        gl.vertexAttribPointer(gl.program.position_handle, 3, gl.FLOAT, false, 4 * renderer.grid.itemSize, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+        gl.vertexAttribPointer(gl.program.position_handle, renderer.buffer.gridItemSize, gl.FLOAT, false, 4 * renderer.buffer.gridStride, 0);
         gl.enableVertexAttribArray(gl.program.position_handle);
-        gl.vertexAttribPointer(gl.program.color_handle, 3, gl.FLOAT, false, 4 * renderer.grid.itemSize, 4*3);
+        gl.vertexAttribPointer(gl.program.color_handle, renderer.buffer.gridItemSize, gl.FLOAT, false, 4 * renderer.buffer.gridStride, 4*3);
         gl.enableVertexAttribArray(gl.program.color_handle);
         gl.uniformMatrix4fv(gl.program.modelview_handle, false, this.dolleyCamera.modelview.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.projection_handle, false, this.dolleyCamera.projection.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.identity.getAsFloat32Array());
-        gl.drawArrays(gl.LINES, 0, this.grid.numItems);
+        gl.drawArrays(gl.LINES, 0, this.buffer.gridNumItems);
         gl.enable(gl.DEPTH_TEST);
 
         gl.flush();
