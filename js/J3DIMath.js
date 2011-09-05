@@ -1023,6 +1023,10 @@ J3DIVector3.prototype.divide = function(divisor)
     this[0] /= divisor; this[1] /= divisor; this[2] /= divisor;
 }
 
+J3DIVector3.prototype.mult = function(factor) {
+    this[0] *= factor; this[1] *= factor; this[2] *= factor;
+}
+
 J3DIVector3.prototype.cross = function(v)
 {
     var x = this[1] * v[2] - this[2] * v[1],
@@ -1031,6 +1035,18 @@ J3DIVector3.prototype.cross = function(v)
     this[0] =  x;
     this[1] =  y;
     this[2] =  z;
+}
+
+J3DIVector3.prototype.add = function(v) {
+    this.load(this[0] + v[0],
+              this[1] + v[1],
+              this[2] + v[2]);
+}
+
+J3DIVector3.prototype.subtract = function(v) {
+    this[0] -= v[0],
+    this[1] -= v[1],
+    this[2] -= v[2];
 }
 
 J3DIVector3.prototype.dot = function(v)

@@ -82,11 +82,13 @@ function main() {
                                value: default_value,
                                slide: function (event, ui) {
                                           $("#width-amount").val(ui.value);
+                                          renderer.demoCamera.setWidth(ui.value);
                                }};
         // defaults
         $( "#width-amount" ).val(default_value);
         $( "#height-amount" ).val(default_value);
-        $( "#near-amount" ).val(default_value);
+        $( "#near-amount" ).val(1);
+        $( "#far-amount" ).val(2.5);
         $( "#eye-x-amount" ).val(0);
         $( "#eye-y-amount" ).val(0);
         $( "#eye-z-amount" ).val(0);
@@ -99,34 +101,46 @@ function main() {
 
         // sliders
         $( "#width-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#height-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#height-amount").val(ui.value); renderer.demoCamera.setHeight(ui.value); };
         $( "#height-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#near-amount").val(ui.value); };
+        slider_options.value = 1;
+        slider_options.min = 0.1;
+        slider_options.max = 8.0;
+        slider_options['slide'] = function (event, ui) { $("#near-amount").val(ui.value); renderer.demoCamera.setNear(ui.value); };
         $( "#near-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#far-amount").val(ui.value); };
+        slider_options.value = 2.5;
+        slider_options.min = 0.1;
+        slider_options.max = 8.0;
+        slider_options['slide'] = function (event, ui) { $("#far-amount").val(ui.value); renderer.demoCamera.setFar(ui.value); };
         $( "#far-slider" ).slider(slider_options);
 
-        slider_options.default_value = 0;
-        slider_options['slide'] = function (event, ui) { $("#eye-x-amount").val(ui.value); };
+        slider_options.min = -1.0;
+        slider_options.max = 1.0;
+        slider_options.value = 0.0;
+        slider_options.min = -8.0;
+        slider_options.max = 8.0;
+        slider_options['slide'] = function (event, ui) { $("#eye-x-amount").val(ui.value); renderer.demoCamera.setEyeX(ui.value); };
         $( "#eye-x-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#eye-y-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#eye-y-amount").val(ui.value); renderer.demoCamera.setEyeY(ui.value); };
         $( "#eye-y-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#eye-z-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#eye-z-amount").val(ui.value); renderer.demoCamera.setEyeZ(ui.value); };
         $( "#eye-z-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#look-x-amount").val(ui.value); };
+        slider_options.min = -1.0;
+        slider_options.max = 1.0;
+        slider_options['slide'] = function (event, ui) { $("#look-x-amount").val(ui.value); renderer.demoCamera.setLookX(ui.value); };
         $( "#look-x-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#look-y-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#look-y-amount").val(ui.value); renderer.demoCamera.setLookY(ui.value); };
         $( "#look-y-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#look-z-amount").val(ui.value); };
-        slider_options.default_value = -1;
+        slider_options['slide'] = function (event, ui) { $("#look-z-amount").val(ui.value); renderer.demoCamera.setLookZ(ui.value); };
+        slider_options.value = -1;
         $( "#look-z-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#up-x-amount").val(ui.value); };
-        slider_options.default_value = 0;
+        slider_options['slide'] = function (event, ui) { $("#up-x-amount").val(ui.value); renderer.demoCamera.setUpX(ui.value); };
+        slider_options.value = 0;
         $( "#up-x-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#up-z-amount").val(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#up-z-amount").val(ui.value); renderer.demoCamera.setUpY(ui.value); };
         $( "#up-z-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#up-y-amount").val(ui.value); };
-        slider_options.default_value = 1;
+        slider_options['slide'] = function (event, ui) { $("#up-y-amount").val(ui.value); renderer.demoCamera.setUpZ(ui.value); };
+        slider_options.value = 1;
         $( "#up-y-slider" ).slider(slider_options);
 
         /* Transformation Slider Panel */
@@ -136,12 +150,11 @@ function main() {
         var trans_steps = [ 'World-Space',
                             'Translate to origin',
                             'Align to the negative Z axis',
-                            'Square up the view volume',
-                            'Bring the far clipping plane to z = -1',
+                            'Scale and unitize the view volume',
                             'Unhinge the viewing volume' ];
         slider_options = { range: 'min',
                            min: 0,
-                           max: 5,
+                           max: 4,
                            value: 0,
                            slide: function (event, ui) {
                                 $("#trans-step").html(trans_steps[ui.value]);

@@ -136,7 +136,6 @@ Camera.prototype.originOrbitingLookVectorTranslate = function(delta) {
 };
 
 Camera.prototype.originOrbitingRotate = function(deltaX, deltaY) {
-    // TODO: fix this
     var mv = new J3DIMatrix4(this.modelview);
     var matrix = new J3DIMatrix4(this.projection);
     matrix.multiply(mv);
@@ -163,28 +162,180 @@ Camera.prototype.originOrbitingRotate = function(deltaX, deltaY) {
  */
 function DemoFrustumCamera() {
     this.eye = new J3DIVector3(0,0,0);
-    this.look = new J3DIVector3(0,0,0);
-    this.up = new J3DIVector3(0,0,0);
-    this.u = new J3DIVector3(0,0,0);
-    this.v = new J3DIVector3(0,0,0);
-    this.w = new J3DIVector3(0,0,0);
+    this.look = new J3DIVector3(0,0,-1);
+    this.up = new J3DIVector3(0,1,0);
+    this.u = new J3DIVector3(1,0,0);
+    this.v = new J3DIVector3(0,1,0);
+    this.w = new J3DIVector3(0,0,1);
+
+    this.height = 1;
+    this.width = 1;
+    this.near = 1;
+    this.far = 2.5;
+
     this.matrices = [ new J3DIMatrix4(), 
                       new J3DIMatrix4(),
                       new J3DIMatrix4(),
-                      new J3DIMatrix4(),
                       new J3DIMatrix4() ];
-    for (var i = 0; i < 5; i++)
+    for (var i = 0; i < 4; i++)
         this.matrices[i].makeIdentity();
+
+    // to use for rendering the frustum (it is
+    // easier to define it in camera space and obtain the world space
+    // positions from there
+    this.frustumRenderTransform = new J3DIMatrix4();
+    this.frustumRenderTransform.makeIdentity();
+
+    // this is the final transform
+    this.finalTransform = new J3DIMatrix4();
+    this.invFinalTransform = new J3DIMatrix4();
+    this.finalTransform.makeIdentity();
+    this.invFinalTransform.makeIdentity();
+
+    this.step = 0;
+    this.computeModelviewMatrices();
+    this.computeProjectionMatrices();
 }
 
-DemoFrustumCamera.prototype.lookAt = function(eye, center, up) {
-    this.eye = eye;
-    this.look = J3DIVector3(center.x - eye.x, center.y - eye.y, center.z - eye.z).normalize();
-    this.up = up.normalize();
+DemoFrustumCamera.prototype.computeModelviewMatrices = function() {
+    var x = -this.eye[0],
+        y = -this.eye[1],
+        z = -this.eye[2];
+    this.matrices[0].load([1,0,0,0,
+                           0,1,0,0,
+                           0,0,1,0,
+                           x,y,z,1]);
+
+    this.matrices[1].load([this.u[0], this.v[0], this.w[0], 0,
+                           this.u[1], this.v[1], this.w[1], 0,
+                           this.u[2], this.v[2], this.w[2], 0,
+                               0    ,     0    ,     0    , 1 ]);
+
+    this.updateFrustumTransform(this.step);
 };
 
-DemoFrustumCamera.prototype.perspective = function(fovy, aspect, near, far) {
-    // TODO:
+DemoFrustumCamera.prototype.computeProjectionMatrices = function() {
+    var w = Math.tan(this.width/2.0) * this.far,
+        h = Math.tan(this.height/2.0) * this.far,
+        x = 1.0/w,
+        y = 1.0/h,
+        z = 1.0/this.far,
+        c = -this.near/this.far;
+
+    this.matrices[2].load([x,0,0,0,
+                           0,y,0,0,
+                           0,0,z,0,
+                           0,0,0,1]);
+
+    this.matrices[3].load([1,0,    0   , 0,
+                           0,1,    0   , 0,
+                           0,0, 1/(c+1),-1,
+                           0,0,-c/(c+1), 0]);
+
+    this.updateFrustumTransform(this.step);
+};
+
+DemoFrustumCamera.prototype.updateFrustumTransform = function(step) {
+    // update the rendering transform
+    this.step = step;
+    this.frustumRenderTransform.makeIdentity();
+    for (var i = 3; i >= 0 + step; i--) {
+        this.frustumRenderTransform.multiply(this.matrices[i]);
+    }
+    this.frustumRenderTransform.invert();
+
+    // TODO: do finalTransform
+};
+
+DemoFrustumCamera.prototype.lookAt = function(eye, look, up) {
+
+    // TODO: fix bug where matrices are filled with NaN when look and up are aligned or have zero values
+    up.normalize();
+    look.normalize();
+    this.eye = eye;
+    this.look = look;
+    this.up = up;
+    this.w.load(-this.look[0], -this.look[1], -this.look[2]);
+    var temp = this.w.dot(this.up);
+    var tempv = new J3DIVector3();
+    tempv.load(this.w[0], this.w[1], this.w[2]);
+    tempv.mult(temp);
+    this.v.load(this.up[0], this.up[1], this.up[2]);
+    this.v.subtract(tempv);
+    this.v.normalize();
+    this.u.load(this.v[0], this.v[1], this.v[2]);
+    this.u.cross(this.w);
+    this.u.normalize();
+    this.computeModelviewMatrices();
+};
+
+DemoFrustumCamera.prototype.setEyeX = function(x) {
+    this.eye[0] = x;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setEyeY = function(y) {
+    this.eye[1] = y;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setEyeZ = function(z) {
+    this.eye[2] = z;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setLookX = function(x) {
+    this.look[0] = x;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setLookY = function(y) {
+    this.look[1] = y;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setLookZ = function(z) {
+    this.look[2] = z;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setUpX = function(x) {
+    this.up[0] = x;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setUpY = function(y) {
+    this.up[1] = y;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.setUpZ = function(z) {
+    this.up[2] = z;
+    this.lookAt(this.eye, this.look, this.up);
+};
+
+DemoFrustumCamera.prototype.frustum = function(height, width, near, far) {
+    this.height = height;
+    this.width = width;
+    this.near = near;
+    this.far = far;
+    this.computeProjectionMatrices();
+};
+
+DemoFrustumCamera.prototype.setHeight = function(h) {
+    this.frustum(h, this.width, this.near, this.far);
+};
+
+DemoFrustumCamera.prototype.setWidth = function(w) {
+    this.frustum(this.height, w, this.near, this.far);
+};
+
+DemoFrustumCamera.prototype.setNear = function(n) {
+    this.frustum(this.height, this.width, n, this.far);
+};
+
+DemoFrustumCamera.prototype.setFar = function(f) {
+    this.frustum(this.height, this.width, this.near, f);
 };
 
 /**
@@ -205,8 +356,9 @@ function Renderer(canvas1, canvas2) {
     this.contexts.push(WebGLUtils.initWebGLContext(canvas1));
     //contexts.push(WebGLUtils.initWebGLContext(canvas2));
     if (!this.contexts[0]) {// TODO: contexts[1]
-    	$('body').html('');
-        alert("Unable to initialize WebGL. Your browser may not support it.");
+    	$('body').html('<p style="text-align: center; margin-top: 20%"> Unable to initialize WebGL. Make sure you\'re\
+    	                using a browser that supports it (e.g. Google Chrome). If that doesn\'t work,\
+    	                try switching computers as the graphics card may be busy.</p>');
         return;
     } else {
         setInterval(tick, 1000/30);
@@ -245,7 +397,8 @@ function Renderer(canvas1, canvas2) {
 
     var initializeGL = function(context) {
         context.clearColor(1.0, 1.0, 1.0, 1.0);
-        // TODO: depth test, blending  and stuff
+        context.enable(context.BLEND);
+        context.blendFunc(context.SRC_ALPHA, context.ONE_MINUS_SRC_ALPHA);
         context.enable(context.DEPTH_TEST);
         loadShaderProgram(context);
         context.viewport(0, 0, context.viewportWidth, context.viewportHeight);
@@ -267,17 +420,17 @@ function Renderer(canvas1, canvas2) {
         z = x;
         for (var i = 0; i <= segments; i++) {
             buffer.push(x, 0, z);
-            buffer.push(0, 0, 0, 1);
+            buffer.push(0.72, 0.72, 0.72, 1);
             buffer.push(x + segments*width, 0, z);
-            buffer.push(0, 0, 0, 1);
+            buffer.push(0.72, 0.72, 0.72, 1);
             z += width;
         }
         z = x;
         for (var i = 0; i <= segments; i++) {
             buffer.push(x, 0, z);
-            buffer.push(0, 0, 0, 1);
+            buffer.push(0.72, 0.72, 0.72, 1);
             buffer.push(x, 0, z + segments*width);
-            buffer.push(0, 0, 0, 1);
+            buffer.push(0.72, 0.72, 0.72, 1);
             x += width;
         }
 
@@ -345,6 +498,58 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer.zTipStart = renderer.buffer.xTipStart + renderer.buffer.xTipNumItems;
         renderer.buffer.zTipNumItems = buffer.length/stride - renderer.buffer.zTipStart;
 
+        // the camera frustum
+        // edges
+        buffer.push( // near
+                    -1,-1, 0,    0,0,0,1,
+                     1,-1, 0,    0,0,0,1,
+                     1,-1, 0,    0,0,0,1,
+                     1, 1, 0,    0,0,0,1,
+                     1, 1, 0,    0,0,0,1,
+                    -1, 1, 0,    0,0,0,1,
+                    -1, 1, 0,    0,0,0,1,
+                    -1,-1, 0,    0,0,0,1,
+
+                    // far
+                    -1,-1,-1,    0,0,0,1,
+                     1,-1,-1,    0,0,0,1,
+                     1,-1,-1,    0,0,0,1,
+                     1, 1,-1,    0,0,0,1,
+                     1, 1,-1,    0,0,0,1,
+                    -1, 1,-1,    0,0,0,1,
+                    -1, 1,-1,    0,0,0,1,
+                    -1,-1,-1,    0,0,0,1,
+
+                    // sides
+                    -1,-1, 0,     0,0,0,1,
+                    -1,-1,-1,     0,0,0,1,
+                     1,-1, 0,     0,0,0,1,
+                     1,-1,-1,     0,0,0,1,
+                    -1, 1, 0,     0,0,0,1,
+                    -1, 1,-1,     0,0,0,1,
+                     1, 1, 0,     0,0,0,1,
+                     1, 1,-1,     0,0,0,1);
+
+        renderer.buffer.frustumWireFrameStart = renderer.buffer.zTipStart + renderer.buffer.zTipNumItems;
+        renderer.buffer.frustumWireFrameNumItems = buffer.length/stride - renderer.buffer.frustumWireFrameStart;
+
+        // faces
+        buffer.push(-1, 1, 0,   1,0,0,0.5,
+                    -1,-1, 0,   1,0,0,0.5,
+                     1, 1, 0,   1,0,0,0.5,
+                     1,-1, 0,   1,0,0,0.5,
+                     1, 1,-1,   1,0,0,0.5,
+                     1,-1,-1,   1,0,0,0.5,
+                    -1, 1,-1,   1,0,0,0.5,
+                    -1,-1,-1,   1,0,0,0.5,
+                    -1, 1, 0,   1,0,0,0.5,
+                    -1,-1, 0,   1,0,0,0.5);
+
+        // TODO: complete faces
+
+        renderer.buffer.frustumFacesStart = renderer.buffer.frustumWireFrameStart + renderer.buffer.frustumWireFrameNumItems;
+        renderer.buffer.frustumFacesNumItems = buffer.length/stride - renderer.buffer.frustumFacesStart;
+
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
 
         renderer.buffer.vertexSize = 3;
@@ -353,9 +558,15 @@ function Renderer(canvas1, canvas2) {
     };
 
     this.initializeCameras = function() {
+        // the camera that is used to render the scene
         this.dolleyCamera = new Camera();
-        this.dolleyCamera.lookAt(4,4,4, 0,0,0, 0,1,0);
+        this.dolleyCamera.lookAt(8,4,8, 0,0,0, 0,1,0);
         this.resize();
+
+        // this is the camera that contains the transformation matrices
+        // that we are demoing. This camera makes the shape of the frustum and the rendered
+        // object change
+        this.demoCamera = new DemoFrustumCamera();
     };
 
     this.identity = new J3DIMatrix4();
@@ -384,6 +595,13 @@ function Renderer(canvas1, canvas2) {
         gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.xTipStart, this.buffer.xTipNumItems);
         gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.yTipStart, this.buffer.yTipNumItems);
         gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.zTipStart, this.buffer.zTipNumItems);
+
+        // frustum wireframe
+        gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.demoCamera.frustumRenderTransform.getAsFloat32Array());
+        gl.drawArrays(gl.LINES, this.buffer.frustumWireFrameStart, renderer.buffer.frustumWireFrameNumItems);
+
+        // frustum faces
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.frustumFacesStart, this.buffer.frustumFacesNumItems);
 
         gl.flush();
     };
