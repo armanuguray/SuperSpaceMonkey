@@ -216,11 +216,11 @@ function Renderer(canvas1, canvas2) {
     var loadShaderProgram = function(context) {
 
         var vertex = "attribute vec3 a_position;" +
-                     "attribute vec3 a_color;" +
+                     "attribute vec4 a_color;" +
                      "uniform mat4 u_modelview;" +
                      "uniform mat4 u_projection;" +
                      "uniform mat4 u_ctm;" +
-                     "varying vec3 color;" +
+                     "varying vec4 color;" +
                      "void main() {" +
                      "  color = a_color;" +
                      "  gl_Position = u_projection * u_modelview * u_ctm * vec4(a_position, 1.0);" +
@@ -228,9 +228,9 @@ function Renderer(canvas1, canvas2) {
         var frag = "#ifdef GL_ES\n" +
                    "precision highp float;\n" +
                    "#endif\n" +
-                   "varying vec3 color;" +
+                   "varying vec4 color;" +
                    "void main() {" +
-                   "    gl_FragColor = vec4(color, 1.0);" +
+                   "    gl_FragColor = color;" +
                    "}";
         context.program = WebGLUtils.loadShaderProgram(context, vertex, frag);
         var prog = context.program;
@@ -299,6 +299,52 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer.gridStart = 0;
         renderer.buffer.gridNumItems = buffer.length/stride;
 
+		// add cone for the tips of the major axes
+		// y-axis
+		buffer.push(0,3.2,0,              0,1,0,1);
+		buffer.push(0.075,3,0,            0,1,0,1);
+		buffer.push(0.054,3,-0.054,       0,1,0,1);
+		buffer.push(0,3,-0.075,           0,1,0,1);
+		buffer.push(-0.054,3,-0.054,      0,1,0,1);
+		buffer.push(-0.075,3,0,           0,1,0,1);
+		buffer.push(-0.054,3,0.054,       0,1,0,1);
+		buffer.push(0,3,0.075,            0,1,0,1);
+		buffer.push(0.054,3,0.054,        0,1,0,1);
+		buffer.push(0.075,3,0,            0,1,0,1);
+
+        renderer.buffer.yTipStart = renderer.buffer.gridNumItems;
+        renderer.buffer.yTipNumItems = buffer.length/stride - renderer.buffer.gridNumItems;
+
+        // x-axis
+        buffer.push(3.2,0,0,              1,0,0,1);
+		buffer.push(3,0.075,0,            1,0,0,1);
+		buffer.push(3,0.054,-0.054,       1,0,0,1);
+		buffer.push(3,0,-0.075,           1,0,0,1);
+		buffer.push(3,-0.054,-0.054,      1,0,0,1);
+		buffer.push(3,-0.075,0,           1,0,0,1);
+		buffer.push(3,-0.054,0.054,       1,0,0,1);
+		buffer.push(3,0,0.075,            1,0,0,1);
+		buffer.push(3,0.054,0.054,        1,0,0,1);
+		buffer.push(3,0.075,0,            1,0,0,1);
+
+        renderer.buffer.xTipStart = renderer.buffer.yTipStart + renderer.buffer.yTipNumItems;
+        renderer.buffer.xTipNumItems = buffer.length/stride - renderer.buffer.xTipStart;
+
+        // z-axis
+		buffer.push(0,0,3.2,              0,0,1,1);
+		buffer.push(0.075,0,3,            0,0,1,1);
+		buffer.push(0.054,-0.054,3,       0,0,1,1);
+		buffer.push(0,-0.075,3,           0,0,1,1);
+		buffer.push(-0.054,-0.054,3,      0,0,1,1);
+		buffer.push(-0.075,0,3,           0,0,1,1);
+		buffer.push(-0.054,0.054,3,       0,0,1,1);
+		buffer.push(0,0.075,3,            0,0,1,1);
+		buffer.push(0.054,0.054,3,        0,0,1,1);
+		buffer.push(0.075,0,3,            0,0,1,1);
+
+        renderer.buffer.zTipStart = renderer.buffer.xTipStart + renderer.buffer.xTipNumItems;
+        renderer.buffer.zTipNumItems = buffer.length/stride - renderer.buffer.zTipStart;
+
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
 
         renderer.buffer.vertexSize = 3;
@@ -351,8 +397,14 @@ function Renderer(canvas1, canvas2) {
         gl.uniformMatrix4fv(gl.program.modelview_handle, false, this.dolleyCamera.modelview.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.projection_handle, false, this.dolleyCamera.projection.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.identity.getAsFloat32Array());
+
         gl.drawArrays(gl.LINES, this.buffer.gridStart, this.buffer.gridNumItems);
         gl.enable(gl.DEPTH_TEST);
+
+        // axis tips
+        gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.xTipStart, this.buffer.xTipNumItems);
+        gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.yTipStart, this.buffer.yTipNumItems);
+        gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.zTipStart, this.buffer.zTipNumItems);
 
         gl.flush();
     };
