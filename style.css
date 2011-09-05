@@ -112,4 +112,6 @@ body {
     font-family: Verdana, Arial, sans-serif; 
 }
 
-
+.ui-accordion .ui-accordion-content {
+    overflow:hidden !important;
+ }

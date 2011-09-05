@@ -352,27 +352,6 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer.stride = stride;
     };
 
-    /* create buffer that holds the tips of the axes 
-        renderer.axes = gl.createBuffer();
-        var axes = [];
-        var res = 8,
-            radius = 0.5,
-            height = 0.5;
-        var angle = 0,
-            incr = 2 * Math.PI / res;
-
-        // x axis
-        axes.push(axisLength + height, 0, 0); axes.push(1, 0, 0);
-        for (var i = 0; i <= res; i++) {
-            axes.push(axisLength, Math.sin(angle), Math.cos(angle)); axes.push(1, 0, 0);
-            angle += incr;
-        }
-
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(axes), gl.STATIC_DRAW);
-        renderer.axes.itemSize = 3;
-        renderer.grid.stride = 6;
-        renderer.grid.numItems = grid.length/6;
-*/
     this.initializeCameras = function() {
         this.dolleyCamera = new Camera();
         this.dolleyCamera.lookAt(4,4,4, 0,0,0, 0,1,0);
