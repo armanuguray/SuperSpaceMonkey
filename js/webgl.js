@@ -205,6 +205,7 @@ function Renderer(canvas1, canvas2) {
     this.contexts.push(WebGLUtils.initWebGLContext(canvas1));
     //contexts.push(WebGLUtils.initWebGLContext(canvas2));
     if (!this.contexts[0]) {// TODO: contexts[1]
+    	$('body').html('');
         alert("Unable to initialize WebGL. Your browser may not support it.");
         return;
     } else {
@@ -257,6 +258,8 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffer);
         var buffer = [];
+
+		// add coordinate grid
         var x, z;
         var width = 2.0;
         var segments = 12.0;
@@ -264,38 +267,43 @@ function Renderer(canvas1, canvas2) {
         z = x;
         for (var i = 0; i <= segments; i++) {
             buffer.push(x, 0, z);
-            buffer.push(0, 0, 0);
+            buffer.push(0, 0, 0, 1);
             buffer.push(x + segments*width, 0, z);
-            buffer.push(0, 0, 0);
+            buffer.push(0, 0, 0, 1);
             z += width;
         }
         z = x;
         for (var i = 0; i <= segments; i++) {
             buffer.push(x, 0, z);
-            buffer.push(0, 0, 0);
+            buffer.push(0, 0, 0, 1);
             buffer.push(x, 0, z + segments*width);
-            buffer.push(0, 0, 0);
+            buffer.push(0, 0, 0, 1);
             x += width;
         }
 
         // add major axes
         // vertex:           color:
         // x-axis
-        buffer.push(0,0,0); buffer.push(1,0,0);
-        buffer.push(3,0,0); buffer.push(1,0,0);
+        buffer.push(0,0,0); buffer.push(1,0,0,1);
+        buffer.push(3,0,0); buffer.push(1,0,0,1);
 
         // y-axis
-        buffer.push(0,0,0); buffer.push(0,1,0);
-        buffer.push(0,3,0); buffer.push(0,1,0);
+        buffer.push(0,0,0); buffer.push(0,1,0,1);
+        buffer.push(0,3,0); buffer.push(0,1,0,1);
 
         // z-axis
-        buffer.push(0,0,0); buffer.push(0,0,1);
-        buffer.push(0,0,3); buffer.push(0,0,1);
+        buffer.push(0,0,0); buffer.push(0,0,1,1);
+        buffer.push(0,0,3); buffer.push(0,0,1,1);
+
+		var stride = 7;
+        renderer.buffer.gridStart = 0;
+        renderer.buffer.gridNumItems = buffer.length/stride;
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
-        renderer.buffer.gridItemSize = 3;
-        renderer.buffer.gridStride = 6;
-        renderer.buffer.gridNumItems = buffer.length/6;
+
+        renderer.buffer.vertexSize = 3;
+        renderer.buffer.colorSize = 4;
+        renderer.buffer.stride = stride;
     };
 
     /* create buffer that holds the tips of the axes 
@@ -336,14 +344,14 @@ function Renderer(canvas1, canvas2) {
         // render grid
         gl.disable(gl.DEPTH_TEST);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-        gl.vertexAttribPointer(gl.program.position_handle, renderer.buffer.gridItemSize, gl.FLOAT, false, 4 * renderer.buffer.gridStride, 0);
+        gl.vertexAttribPointer(gl.program.position_handle, renderer.buffer.vertexSize, gl.FLOAT, false, 4 * renderer.buffer.stride, 0);
         gl.enableVertexAttribArray(gl.program.position_handle);
-        gl.vertexAttribPointer(gl.program.color_handle, renderer.buffer.gridItemSize, gl.FLOAT, false, 4 * renderer.buffer.gridStride, 4*3);
+        gl.vertexAttribPointer(gl.program.color_handle, renderer.buffer.colorSize, gl.FLOAT, false, 4 * renderer.buffer.stride, 4*3);
         gl.enableVertexAttribArray(gl.program.color_handle);
         gl.uniformMatrix4fv(gl.program.modelview_handle, false, this.dolleyCamera.modelview.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.projection_handle, false, this.dolleyCamera.projection.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.identity.getAsFloat32Array());
-        gl.drawArrays(gl.LINES, 0, this.buffer.gridNumItems);
+        gl.drawArrays(gl.LINES, this.buffer.gridStart, this.buffer.gridNumItems);
         gl.enable(gl.DEPTH_TEST);
 
         gl.flush();
@@ -377,6 +385,7 @@ function Renderer(canvas1, canvas2) {
         this.oldMouseX = event.x;
         this.oldMouseY = event.y;
         this.mouseIsDown = true;
+        event.preventDefault(); // prevent the default dragging event
     };
 
     this.handleMouseMove = function(event) {
@@ -392,7 +401,7 @@ function Renderer(canvas1, canvas2) {
     };
 
     this.handleMouseWheel = function(event) {
-        this.dolleyCamera.originOrbitingLookVectorTranslate(0.0005 * event.wheelDelta);
+        this.dolleyCamera.originOrbitingLookVectorTranslate(0.005 * event.wheelDelta);
     };
 
     initializeGL(this.contexts[0]);
