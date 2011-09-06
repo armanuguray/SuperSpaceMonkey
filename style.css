@@ -1,5 +1,6 @@
 body {
     height: 100%;
+    font-family: Verdana, Arial, sans-serif; 
 }
 
 #frustum-view {
@@ -37,6 +38,14 @@ body {
     height: 200px;
     width: 300px;
     border: 1px solid black;
+}
+
+#warning-view {
+    position:fixed;
+    background: clear;
+    right: 20px;
+    color: red;
+    font-size: 10pt;
 }
 
 #control-panel {
@@ -114,4 +123,4 @@ body {
 
 .ui-accordion .ui-accordion-content {
     overflow:hidden !important;
- }
+}

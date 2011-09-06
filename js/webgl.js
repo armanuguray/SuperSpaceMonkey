@@ -1,6 +1,9 @@
 /**
  * J3DIVector3 additions.
  */
+J3DIVector3.prototype.vectorLength2 = function() {
+    return this[0]*this[0] + this[1]*this[1] + this[2]*this[2];
+};
 
 J3DIVector3.prototype.normalize = function() {
     var len = this.vectorLength();
@@ -249,24 +252,57 @@ DemoFrustumCamera.prototype.updateFrustumTransform = function(step) {
 
 DemoFrustumCamera.prototype.lookAt = function(eye, look, up) {
 
-    // TODO: fix bug where matrices are filled with NaN when look and up are aligned or have zero values
-    up.normalize();
-    look.normalize();
-    this.eye = eye;
-    this.look = look;
-    this.up = up;
-    this.w.load(-this.look[0], -this.look[1], -this.look[2]);
-    var temp = this.w.dot(this.up);
-    var tempv = new J3DIVector3();
-    tempv.load(this.w[0], this.w[1], this.w[2]);
-    tempv.mult(temp);
-    this.v.load(this.up[0], this.up[1], this.up[2]);
-    this.v.subtract(tempv);
-    this.v.normalize();
-    this.u.load(this.v[0], this.v[1], this.v[2]);
-    this.u.cross(this.w);
-    this.u.normalize();
-    this.computeModelviewMatrices();
+    // TODO: add a warning label for parallel and zero vectors
+    if (up.vectorLength() <= 1e-3) {
+        $('#warning-view').html('<p> The <em> Up </em> vector should not have length 0 </p>'); }
+    else if (look.vectorLength() <= 1e-3)
+        $('#warning-view').html('<p> The <em> Look </em> vector should not have length 0 </p>');
+    else {
+        up.normalize();
+        look.normalize();
+        if (1.0 - Math.abs(up.dot(look)) <= 1e-3)
+            $('#warning-view').html('<p> The <em> Look </em> and <em> Up </em> vectors should not be parallel </p>');
+        else {
+            $('#warning-view').html('');
+            this.eye = eye;
+            this.look = look;
+            this.up = up;
+            this.w.load(-this.look[0], -this.look[1], -this.look[2]);
+            var temp = this.w.dot(this.up);
+            var tempv = new J3DIVector3();
+            tempv.load(this.w[0], this.w[1], this.w[2]);
+            tempv.mult(temp);
+            this.v.load(this.up[0], this.up[1], this.up[2]);
+            this.v.subtract(tempv);
+            this.v.normalize();
+            this.u.load(this.v[0], this.v[1], this.v[2]);
+            this.u.cross(this.w);
+            this.u.normalize();
+            this.computeModelviewMatrices();
+        }
+    }
+/*
+    if (up.vectorLength2() > 1e-3 && look.vectorLength2() > 1e-3) {
+        up.normalize();
+        look.normalize();
+        if (1.0 - Math.abs(up.dot(look)) > 1e-3) {
+            this.eye = eye;
+            this.look = look;
+            this.up = up;
+            this.w.load(-this.look[0], -this.look[1], -this.look[2]);
+            var temp = this.w.dot(this.up);
+            var tempv = new J3DIVector3();
+            tempv.load(this.w[0], this.w[1], this.w[2]);
+            tempv.mult(temp);
+            this.v.load(this.up[0], this.up[1], this.up[2]);
+            this.v.subtract(tempv);
+            this.v.normalize();
+            this.u.load(this.v[0], this.v[1], this.v[2]);
+            this.u.cross(this.w);
+            this.u.normalize();
+            this.computeModelviewMatrices();
+        }
+    }*/
 };
 
 DemoFrustumCamera.prototype.setEyeX = function(x) {
@@ -356,7 +392,7 @@ function Renderer(canvas1, canvas2) {
     this.contexts.push(WebGLUtils.initWebGLContext(canvas1));
     //contexts.push(WebGLUtils.initWebGLContext(canvas2));
     if (!this.contexts[0]) {// TODO: contexts[1]
-    	$('body').html('<p style="text-align: center; margin-top: 20%"> Unable to initialize WebGL. Make sure you\'re\
+    	$('body').html('<p style="text-align: center; margin-top: 20%; margin-left: auto; margin-right: auto; width: 800px;"> Unable to initialize WebGL. Make sure you\'re\
     	                using a browser that supports it (e.g. Google Chrome). If that doesn\'t work,\
     	                try switching computers as the graphics card may be busy.</p>');
         return;
@@ -545,10 +581,24 @@ function Renderer(canvas1, canvas2) {
                     -1, 1, 0,   1,0,0,0.5,
                     -1,-1, 0,   1,0,0,0.5);
 
-        // TODO: complete faces
-
         renderer.buffer.frustumFacesStart = renderer.buffer.frustumWireFrameStart + renderer.buffer.frustumWireFrameNumItems;
         renderer.buffer.frustumFacesNumItems = buffer.length/stride - renderer.buffer.frustumFacesStart;
+
+        buffer.push( 1,-1, 0,   1,0,0,0.5,
+                    -1,-1, 0,   1,0,0,0.5,
+                     1,-1,-1,   1,0,0,0.5,
+                    -1,-1,-1,   1,0,0,0.5);
+
+        renderer.buffer.frustumBottomFaceStart = renderer.buffer.frustumFacesStart + renderer.buffer.frustumFacesNumItems;
+        renderer.buffer.frustumBottomFaceNumItems = buffer.length/stride - renderer.buffer.frustumBottomFaceStart;
+
+        buffer.push(-1, 1, 0,   1,0,0,0.5,
+                     1, 1, 0,   1,0,0,0.5,
+                    -1, 1,-1,   1,0,0,0.5,
+                     1, 1,-1,   1,0,0,0.5);
+
+        renderer.buffer.frustumTopFaceStart = renderer.buffer.frustumBottomFaceStart + renderer.buffer.frustumBottomFaceNumItems;
+        renderer.buffer.frustumTopFaceNumItems = buffer.length/stride - renderer.buffer.frustumTopFaceStart;
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
 
@@ -601,7 +651,11 @@ function Renderer(canvas1, canvas2) {
         gl.drawArrays(gl.LINES, this.buffer.frustumWireFrameStart, renderer.buffer.frustumWireFrameNumItems);
 
         // frustum faces
+        gl.enable(gl.CULL_FACE);
         gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.frustumFacesStart, this.buffer.frustumFacesNumItems);
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.frustumBottomFaceStart, this.buffer.frustumBottomFaceNumItems);
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.frustumTopFaceStart, this.buffer.frustumTopFaceNumItems);
+        gl.disable(gl.CULL_FACE);
 
         gl.flush();
     };
@@ -630,27 +684,32 @@ function Renderer(canvas1, canvas2) {
     };
 
     this.mouseIsDown = false;
-    this.handleMouseDown = function(event) {
-        this.oldMouseX = event.x;
-        this.oldMouseY = event.y;
+    this.handleMouseDown = function(e) {
+        this.oldMouseX = e.clientX;
+        this.oldMouseY = e.clientY;
         this.mouseIsDown = true;
-        event.preventDefault(); // prevent the default dragging event
+        if (e.preventDefault)
+            e.preventDefault();
+        else
+            e.returnValue= false;
+        return false;
     };
 
-    this.handleMouseMove = function(event) {
+    this.handleMouseMove = function(e) {
         if (this.oldMouseX != undefined && this.mouseIsDown) {
-            this.dolleyCamera.originOrbitingRotate(event.x - this.oldMouseX, -event.y + this.oldMouseY);
-            this.oldMouseX = event.x;
-            this.oldMouseY = event.y;
+            this.dolleyCamera.originOrbitingRotate(e.clientX - this.oldMouseX, -e.clientY + this.oldMouseY);
+            this.oldMouseX = e.clientX;
+            this.oldMouseY = e.clientY;
         }
     };
 
-    this.handleMouseUp = function(event) {
+    this.handleMouseUp = function(e) {
         this.mouseIsDown = false;
     };
 
-    this.handleMouseWheel = function(event) {
-        this.dolleyCamera.originOrbitingLookVectorTranslate(0.005 * event.wheelDelta);
+    this.handleMouseWheel = function(e) {
+        var delta = e.detail? e.detail*(-10) : 0.1 * e.wheelDelta;
+        renderer.dolleyCamera.originOrbitingLookVectorTranslate(0.005 * delta);
     };
 
     initializeGL(this.contexts[0]);

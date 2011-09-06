@@ -15,10 +15,10 @@ function main() {
     // setup the UI
     $(function () {
         // reset body content
-        var ids = [ 'frustum-view', 'camera-view', 'camtrans-slider-panel', 'control-panel' ];
-        var classes = [ '', 'ui-widget-content', 'ui-widget-content', '' ];
+        var ids = [ 'frustum-view', 'camera-view', 'camtrans-slider-panel', 'control-panel', 'warning-view' ];
+        var classes = [ '', 'ui-widget-content', 'ui-widget-content', '', '' ];
         var markup = '';
-        for (var i = 0; i < 4; i++) {
+        for (var i = 0; i < 5; i++) {
             markup += '<div id="' + ids[i] +'"';
             var c = classes[i];
             if (c != '') markup += 'class="' + c + '"';
@@ -137,9 +137,9 @@ function main() {
         slider_options['slide'] = function (event, ui) { $("#up-x-amount").val(ui.value); renderer.demoCamera.setUpX(ui.value); };
         slider_options.value = 0;
         $( "#up-x-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#up-z-amount").val(ui.value); renderer.demoCamera.setUpY(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#up-z-amount").val(ui.value); renderer.demoCamera.setUpZ(ui.value); };
         $( "#up-z-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#up-y-amount").val(ui.value); renderer.demoCamera.setUpZ(ui.value); };
+        slider_options['slide'] = function (event, ui) { $("#up-y-amount").val(ui.value); renderer.demoCamera.setUpY(ui.value); };
         slider_options.value = 1;
         $( "#up-y-slider" ).slider(slider_options);
 
@@ -167,7 +167,8 @@ function main() {
                                                             'onmousemove="return renderer.handleMouseMove(event)"' +
                                                             'onmouseup="return renderer.handleMouseUp(event)"' +
                                                             'onmouseout="return renderer.handleMouseUp(event)"' +
-                                                            'oncontextmenu="event.preventDefault()"' +
+                                                            'oncontextmenu="if (event.preventDefault) event.preventDefault(); else return false;"' +
+                                                            'DOMMouseScroll="return renderer.handleMouseWheel(event)"' +
                                                             'onmousewheel="return renderer.handleMouseWheel(event)"></canvas>');
         $('#camera-view').append('<canvas id="camera-canvas"></canvas>');
         $('#frustum-canvas')[0].width = $('#frustum-canvas')[0].clientWidth;
@@ -175,5 +176,10 @@ function main() {
         renderer = new Renderer($('#frustum-canvas')[0], $('#camera-canvas')[0]);
 
         window.onresize = function() { renderer.resize(); };
+
+        // make things work with firefox
+        var mousewheelevt=(/Firefox/i.test(navigator.userAgent))? "DOMMouseScroll" : "mousewheel" // Firefox doesn't recognize mousewheel as of FF3.x
+        if (document.addEventListener) //WC3 browsers
+            document.addEventListener(mousewheelevt, renderer.handleMouseWheel, false);
     });
 }
