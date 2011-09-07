@@ -32,7 +32,7 @@ function main() {
 
         /* Camera View */
         $( "#camera-view" ).draggable(dr_options);
-        $( "#camera-view" ).resizable(rs_options);
+        //$( "#camera-view" ).resizable(rs_options);
 
         /* Control Panel */
         // make draggable
@@ -88,12 +88,12 @@ function main() {
         $( "#width-amount" ).val(default_value);
         $( "#height-amount" ).val(default_value);
         $( "#near-amount" ).val(1);
-        $( "#far-amount" ).val(5);
-        $( "#eye-x-amount" ).val(0);
-        $( "#eye-y-amount" ).val(0);
-        $( "#eye-z-amount" ).val(0);
-        $( "#look-x-amount" ).val(0);
-        $( "#look-y-amount" ).val(0);
+        $( "#far-amount" ).val(6);
+        $( "#eye-x-amount" ).val(-1.4);
+        $( "#eye-y-amount" ).val(1.5);
+        $( "#eye-z-amount" ).val(0.8);
+        $( "#look-x-amount" ).val(0.3);
+        $( "#look-y-amount" ).val(-0.1);
         $( "#look-z-amount" ).val(-1);
         $( "#up-x-amount" ).val(0);
         $( "#up-y-amount" ).val(1);
@@ -108,7 +108,7 @@ function main() {
         slider_options.max = 8.0;
         slider_options['slide'] = function (event, ui) { $("#near-amount").val(ui.value); renderer.demoCamera.setNear(ui.value); };
         $( "#near-slider" ).slider(slider_options);
-        slider_options.value = 5;
+        slider_options.value = 6;
         slider_options.min = 0.1;
         slider_options.max = 8.0;
         slider_options['slide'] = function (event, ui) { $("#far-amount").val(ui.value); renderer.demoCamera.setFar(ui.value); };
@@ -116,20 +116,24 @@ function main() {
 
         slider_options.min = -1.0;
         slider_options.max = 1.0;
-        slider_options.value = 0.0;
+        slider_options.value = -1.4;
         slider_options.min = -8.0;
         slider_options.max = 8.0;
         slider_options['slide'] = function (event, ui) { $("#eye-x-amount").val(ui.value); renderer.demoCamera.setEyeX(ui.value); };
         $( "#eye-x-slider" ).slider(slider_options);
-        slider_options['slide'] = function (event, ui) { $("#eye-y-amount").val(ui.value); renderer.demoCamera.setEyeY(ui.value); };
+        slider_options.value = 1.5;
+        slider_options['slide'] = function (event, ui) { $("#eye-y-amount").val(ui.value); renderer.demoCamera.setEyeY(ui.value); };;
         $( "#eye-y-slider" ).slider(slider_options);
+        slider_options.value = 0.8;
         slider_options['slide'] = function (event, ui) { $("#eye-z-amount").val(ui.value); renderer.demoCamera.setEyeZ(ui.value); };
         $( "#eye-z-slider" ).slider(slider_options);
         slider_options.min = -1.0;
         slider_options.max = 1.0;
         slider_options['slide'] = function (event, ui) { $("#look-x-amount").val(ui.value); renderer.demoCamera.setLookX(ui.value); };
+        slider_options.value = 0.3;
         $( "#look-x-slider" ).slider(slider_options);
         slider_options['slide'] = function (event, ui) { $("#look-y-amount").val(ui.value); renderer.demoCamera.setLookY(ui.value); };
+        slider_options.value = -0.1;
         $( "#look-y-slider" ).slider(slider_options);
         slider_options['slide'] = function (event, ui) { $("#look-z-amount").val(ui.value); renderer.demoCamera.setLookZ(ui.value); };
         slider_options.value = -1;
@@ -163,7 +167,6 @@ function main() {
         $("#camtrans-slider-panel .slider").slider(slider_options);
         $("#trans-step").html(trans_steps[0]);
 
-        ///TODO: Setup the gl contexts, change markup to show a message if WebGL is not available
         $('#frustum-view').html('<canvas id="frustum-canvas" onmousedown="return renderer.handleMouseDown(event)"' +
                                                             'onmousemove="return renderer.handleMouseMove(event)"' +
                                                             'onmouseup="return renderer.handleMouseUp(event)"' +

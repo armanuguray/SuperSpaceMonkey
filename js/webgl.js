@@ -164,8 +164,8 @@ Camera.prototype.originOrbitingRotate = function(deltaX, deltaY) {
  * This is a camera that maintains individual camera matrices to demo individual transformation steps
  */
 function DemoFrustumCamera() {
-    this.eye = new J3DIVector3(0,0,0);
-    this.look = new J3DIVector3(0,0,-1);
+    this.eye = new J3DIVector3(-1.4,1.5,0.8);
+    this.look = new J3DIVector3(0.3,-0.1,-1);
     this.up = new J3DIVector3(0,1,0);
     this.u = new J3DIVector3(1,0,0);
     this.v = new J3DIVector3(0,1,0);
@@ -174,7 +174,7 @@ function DemoFrustumCamera() {
     this.height = 1;
     this.width = 1;
     this.near = 1;
-    this.far = 5;
+    this.far = 6;
 
     this.matrices = [ new J3DIMatrix4(), 
                       new J3DIMatrix4(),
@@ -191,12 +191,15 @@ function DemoFrustumCamera() {
 
     // this is the final transform
     this.finalTransform = new J3DIMatrix4();
-    this.invFinalTransform = new J3DIMatrix4();
     this.finalTransform.makeIdentity();
-    this.invFinalTransform.makeIdentity();
+
+    this.modelview = new J3DIMatrix4();
+    this.projection = new J3DIMatrix4();
+    this.modelview.makeIdentity();
+    this.projection.makeIdentity();
 
     this.step = 0;
-    this.computeModelviewMatrices();
+    this.lookAt(this.eye, this.look, this.up);
     this.computeProjectionMatrices();
 }
 
@@ -213,6 +216,10 @@ DemoFrustumCamera.prototype.computeModelviewMatrices = function() {
                            this.u[1], this.v[1], this.w[1], 0,
                            this.u[2], this.v[2], this.w[2], 0,
                                0    ,     0    ,     0    , 1 ]);
+
+    this.modelview.makeIdentity();
+    this.modelview.multiply(this.matrices[1]);
+    this.modelview.multiply(this.matrices[0]);
 
     this.updateFrustumTransform(this.step);
 };
@@ -235,6 +242,11 @@ DemoFrustumCamera.prototype.computeProjectionMatrices = function() {
                            0,0, 1/(c+1),-1,
                            0,0,-c/(c+1), 0]);
 
+    
+    this.projection.makeIdentity();
+    this.projection.multiply(this.matrices[3]);
+    this.projection.multiply(this.matrices[2]);
+
     this.updateFrustumTransform(this.step);
 };
 
@@ -255,7 +267,6 @@ DemoFrustumCamera.prototype.updateFrustumTransform = function(step) {
 
 DemoFrustumCamera.prototype.lookAt = function(eye, look, up) {
 
-    // TODO: add a warning label for parallel and zero vectors
     if (up.vectorLength() <= 1e-3) {
         $('#warning-view').html('<p> The <em> Up </em> vector should not have length 0 </p>'); }
     else if (look.vectorLength() <= 1e-3)
@@ -371,8 +382,8 @@ function Renderer(canvas1, canvas2) {
     // Crate the contexts
     this.contexts = [];
     this.contexts.push(WebGLUtils.initWebGLContext(canvas1));
-    //contexts.push(WebGLUtils.initWebGLContext(canvas2));
-    if (!this.contexts[0]) {// TODO: contexts[1]
+    this.contexts.push(WebGLUtils.initWebGLContext(canvas2));
+    if (!this.contexts[0] || !this.contexts[1]) {
     	$('body').html('<p style="text-align: center; margin-top: 20%; margin-left: auto; margin-right: auto; width: 800px;"> Unable to initialize WebGL. Make sure you\'re\
     	                using a browser that supports it (e.g. Google Chrome). If that doesn\'t work,\
     	                try switching computers as the graphics card may be busy.</p>');
@@ -380,6 +391,9 @@ function Renderer(canvas1, canvas2) {
     } else {
         setInterval(tick, 1000/30);
     }
+
+    this.contexts[1].viewportWidth = 300;
+    this.contexts[1].viewportHeight = 200;
 
     // initialize the shader program for each context
     var loadShaderProgram = function(context) {
@@ -601,7 +615,7 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer.houseHullNumItems = buffer.length/stride - renderer.buffer.houseHullStart;
 
         // roof (TRIANGLE_FAN)
-        buffer.push( 0, 1.25,-3.5,   1,0,0,1,
+        buffer.push(   0,1.25, -3.5,   1,0,0,1,
                     -0.6, 0.8, -2.9,   1,0,0,1,
                      0.6, 0.8, -2.9,   1,0,0,1,
                      0.6, 0.8, -4.1,   1,0,0,1,
@@ -627,6 +641,61 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer.stride = stride;
     };
 
+    var initializeBuffers2 = function(renderer) {
+        var gl = renderer.contexts[1];
+
+        // create the buffer that holds all vertex data
+        renderer.buffer2 = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, renderer.buffer2);
+        var buffer = [];
+        var stride = 7;
+
+        // house model
+        // hull (TRIANGLE_STRIP)
+        buffer.push(-0.5, 0.8,-3,   0,1,0,1,
+                    -0.5, 0,-3,   0,1,0,1,
+                     0.5, 0.8,-3,   0,1,0,1,
+                     0.5, 0,-3,   0,1,0,1,
+                     0.5, 0.8,-4,   0,1,0,1,
+                     0.5, 0,-4,   0,1,0,1,
+                    -0.5, 0.8,-4,   0,1,0,1,
+                    -0.5, 0,-4,   0,1,0,1,
+                    -0.5, 0.8,-3,   0,1,0,1,
+                    -0.5, 0,-3,   0,1,0,1,
+                    -0.5, 0,-4,   0,1,0,1,
+                     0.5, 0,-3,   0,1,0,1,
+                     0.5, 0,-4,   0,1,0,1);
+
+        renderer.buffer2.houseHullStart = 0;
+        renderer.buffer2.houseHullNumItems = buffer.length/stride;
+
+        // roof (TRIANGLE_FAN)
+        buffer.push(   0,1.25, -3.5,   1,0,0,1,
+                    -0.6, 0.8, -2.9,   1,0,0,1,
+                     0.6, 0.8, -2.9,   1,0,0,1,
+                     0.6, 0.8, -4.1,   1,0,0,1,
+                    -0.6, 0.8, -4.1,   1,0,0,1,
+                    -0.6, 0.8, -2.9,   1,0,0,1);
+
+        renderer.buffer2.houseRoofStart = renderer.buffer2.houseHullNumItems;
+        renderer.buffer2.houseRoofNumItems = buffer.length/stride - renderer.buffer2.houseRoofStart;
+
+        // door (TRIANGLE_STRIP)
+        buffer.push(-0.15, 0.5, -2.999,   0,0,1,1,
+                    -0.15,   0, -2.999,   0,0,1,1,
+                     0.15, 0.5, -2.999,   0,0,1,1,
+                     0.15,   0, -2.999,   0,0,1,1);
+
+        renderer.buffer2.houseDoorStart = renderer.buffer2.houseRoofStart + renderer.buffer2.houseRoofNumItems;
+        renderer.buffer2.houseDoorNumItems = buffer.length/stride - renderer.buffer2.houseDoorStart;
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
+
+        renderer.buffer2.vertexSize = 3;
+        renderer.buffer2.colorSize = 4;
+        renderer.buffer2.stride = stride;
+    };
+
     this.initializeCameras = function() {
         // the camera that is used to render the scene
         this.dolleyCamera = new Camera();
@@ -648,7 +717,6 @@ function Renderer(canvas1, canvas2) {
         gl.useProgram(gl.program);
 
         // render grid
-        gl.disable(gl.DEPTH_TEST);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
         gl.vertexAttribPointer(gl.program.position_handle, renderer.buffer.vertexSize, gl.FLOAT, false, 4 * renderer.buffer.stride, 0);
         gl.enableVertexAttribArray(gl.program.position_handle);
@@ -658,6 +726,7 @@ function Renderer(canvas1, canvas2) {
         gl.uniformMatrix4fv(gl.program.projection_handle, false, this.dolleyCamera.projection.getAsFloat32Array());
         gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.identity.getAsFloat32Array());
 
+        gl.disable(gl.DEPTH_TEST);
         gl.drawArrays(gl.LINES, this.buffer.gridStart, this.buffer.gridNumItems);
         gl.enable(gl.DEPTH_TEST);
 
@@ -688,9 +757,43 @@ function Renderer(canvas1, canvas2) {
         gl.flush();
     };
 
+    this.finalProjection = new J3DIMatrix4();
     // renders to the secondary canvas
     this.renderContext2 = function() {
+        var gl = this.contexts[1];
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+        gl.useProgram(gl.program);
+
+        // render grid
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer2);
+        gl.vertexAttribPointer(gl.program.position_handle, renderer.buffer2.vertexSize, gl.FLOAT, false, 4 * renderer.buffer2.stride, 0);
+        gl.enableVertexAttribArray(gl.program.position_handle);
+        gl.vertexAttribPointer(gl.program.color_handle, renderer.buffer2.colorSize, gl.FLOAT, false, 4 * renderer.buffer2.stride, 4*3);
+        gl.enableVertexAttribArray(gl.program.color_handle);
+        gl.uniformMatrix4fv(gl.program.modelview_handle, false, this.demoCamera.modelview.getAsFloat32Array());
+        // OpenGL uses a right handed coordinate system for NDC, so flip z.
+        var m33 = this.demoCamera.projection.$matrix.m33;
+        var m43 = this.demoCamera.projection.$matrix.m43;
+        this.demoCamera.projection.$matrix.m33 = -m33;
+        this.demoCamera.projection.$matrix.m43 = -m43;
+        // OpenGL NDC has a z coordinate range of [-1,1]. Transform it to [0,1]
+        this.finalProjection.load([1,0, 0,0,
+                                   0,1, 0,0,
+                                   0,0, 2,0,
+                                   0,0,-1,1]);
+        this.finalProjection.multiply(this.demoCamera.projection);
+        gl.uniformMatrix4fv(gl.program.projection_handle, false, this.finalProjection.getAsFloat32Array());
+        this.demoCamera.projection.$matrix.m33 = m33;
+        this.demoCamera.projection.$matrix.m43 = m43;
+        gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.identity.getAsFloat32Array());
+
+        // house
+        gl.drawArrays(gl.TRIANGLE_FAN, this.buffer2.houseRoofStart, this.buffer2.houseRoofNumItems);
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer2.houseHullStart, this.buffer2.houseHullNumItems);
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer2.houseDoorStart, this.buffer2.houseDoorNumItems);
+
+        gl.flush();
     };
 
     this.render = function() {
@@ -741,8 +844,9 @@ function Renderer(canvas1, canvas2) {
     };
 
     initializeGL(this.contexts[0]);
+    initializeGL(this.contexts[1]);
     initializeBuffers1(this);
-    // TODO: initializeBuffers2
+    initializeBuffers2(this);
     this.initializeCameras();
 }
 
