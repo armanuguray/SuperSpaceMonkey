@@ -88,7 +88,7 @@ function main() {
         $( "#width-amount" ).val(default_value);
         $( "#height-amount" ).val(default_value);
         $( "#near-amount" ).val(1);
-        $( "#far-amount" ).val(2.5);
+        $( "#far-amount" ).val(5);
         $( "#eye-x-amount" ).val(0);
         $( "#eye-y-amount" ).val(0);
         $( "#eye-z-amount" ).val(0);
@@ -108,7 +108,7 @@ function main() {
         slider_options.max = 8.0;
         slider_options['slide'] = function (event, ui) { $("#near-amount").val(ui.value); renderer.demoCamera.setNear(ui.value); };
         $( "#near-slider" ).slider(slider_options);
-        slider_options.value = 2.5;
+        slider_options.value = 5;
         slider_options.min = 0.1;
         slider_options.max = 8.0;
         slider_options['slide'] = function (event, ui) { $("#far-amount").val(ui.value); renderer.demoCamera.setFar(ui.value); };
@@ -158,6 +158,7 @@ function main() {
                            value: 0,
                            slide: function (event, ui) {
                                 $("#trans-step").html(trans_steps[ui.value]);
+                                renderer.demoCamera.updateFrustumTransform(ui.value);
                            }};
         $("#camtrans-slider-panel .slider").slider(slider_options);
         $("#trans-step").html(trans_steps[0]);

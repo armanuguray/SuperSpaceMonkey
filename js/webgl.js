@@ -174,7 +174,7 @@ function DemoFrustumCamera() {
     this.height = 1;
     this.width = 1;
     this.near = 1;
-    this.far = 2.5;
+    this.far = 5;
 
     this.matrices = [ new J3DIMatrix4(), 
                       new J3DIMatrix4(),
@@ -247,7 +247,10 @@ DemoFrustumCamera.prototype.updateFrustumTransform = function(step) {
     }
     this.frustumRenderTransform.invert();
 
-    // TODO: do finalTransform
+    this.finalTransform.makeIdentity();
+    for (var i = step - 1; i >= 0; i--) {
+        this.finalTransform.multiply(this.matrices[i]);
+    }
 };
 
 DemoFrustumCamera.prototype.lookAt = function(eye, look, up) {
@@ -281,28 +284,6 @@ DemoFrustumCamera.prototype.lookAt = function(eye, look, up) {
             this.computeModelviewMatrices();
         }
     }
-/*
-    if (up.vectorLength2() > 1e-3 && look.vectorLength2() > 1e-3) {
-        up.normalize();
-        look.normalize();
-        if (1.0 - Math.abs(up.dot(look)) > 1e-3) {
-            this.eye = eye;
-            this.look = look;
-            this.up = up;
-            this.w.load(-this.look[0], -this.look[1], -this.look[2]);
-            var temp = this.w.dot(this.up);
-            var tempv = new J3DIVector3();
-            tempv.load(this.w[0], this.w[1], this.w[2]);
-            tempv.mult(temp);
-            this.v.load(this.up[0], this.up[1], this.up[2]);
-            this.v.subtract(tempv);
-            this.v.normalize();
-            this.u.load(this.v[0], this.v[1], this.v[2]);
-            this.u.cross(this.w);
-            this.u.normalize();
-            this.computeModelviewMatrices();
-        }
-    }*/
 };
 
 DemoFrustumCamera.prototype.setEyeX = function(x) {
@@ -600,6 +581,45 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer.frustumTopFaceStart = renderer.buffer.frustumBottomFaceStart + renderer.buffer.frustumBottomFaceNumItems;
         renderer.buffer.frustumTopFaceNumItems = buffer.length/stride - renderer.buffer.frustumTopFaceStart;
 
+        // house model
+        // hull (TRIANGLE_STRIP)
+        buffer.push(-0.5, 0.8,-3,   0,1,0,1,
+                    -0.5, 0,-3,   0,1,0,1,
+                     0.5, 0.8,-3,   0,1,0,1,
+                     0.5, 0,-3,   0,1,0,1,
+                     0.5, 0.8,-4,   0,1,0,1,
+                     0.5, 0,-4,   0,1,0,1,
+                    -0.5, 0.8,-4,   0,1,0,1,
+                    -0.5, 0,-4,   0,1,0,1,
+                    -0.5, 0.8,-3,   0,1,0,1,
+                    -0.5, 0,-3,   0,1,0,1,
+                    -0.5, 0,-4,   0,1,0,1,
+                     0.5, 0,-3,   0,1,0,1,
+                     0.5, 0,-4,   0,1,0,1);
+
+        renderer.buffer.houseHullStart = renderer.buffer.frustumTopFaceStart + renderer.buffer.frustumTopFaceNumItems;
+        renderer.buffer.houseHullNumItems = buffer.length/stride - renderer.buffer.houseHullStart;
+
+        // roof (TRIANGLE_FAN)
+        buffer.push( 0, 1.25,-3.5,   1,0,0,1,
+                    -0.6, 0.8, -2.9,   1,0,0,1,
+                     0.6, 0.8, -2.9,   1,0,0,1,
+                     0.6, 0.8, -4.1,   1,0,0,1,
+                    -0.6, 0.8, -4.1,   1,0,0,1,
+                    -0.6, 0.8, -2.9,   1,0,0,1);
+
+        renderer.buffer.houseRoofStart = renderer.buffer.houseHullStart + renderer.buffer.houseHullNumItems;
+        renderer.buffer.houseRoofNumItems = buffer.length/stride - renderer.buffer.houseRoofStart;
+
+        // door (TRIANGLE_STRIP)
+        buffer.push(-0.15, 0.5, -2.999,   0,0,1,1,
+                    -0.15,   0, -2.999,   0,0,1,1,
+                     0.15, 0.5, -2.999,   0,0,1,1,
+                     0.15,   0, -2.999,   0,0,1,1);
+
+        renderer.buffer.houseDoorStart = renderer.buffer.houseRoofStart + renderer.buffer.houseRoofNumItems;
+        renderer.buffer.houseDoorNumItems = buffer.length/stride - renderer.buffer.houseDoorStart;
+
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
 
         renderer.buffer.vertexSize = 3;
@@ -646,15 +666,23 @@ function Renderer(canvas1, canvas2) {
         gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.yTipStart, this.buffer.yTipNumItems);
         gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.zTipStart, this.buffer.zTipNumItems);
 
+        // house
+        gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.demoCamera.finalTransform.getAsFloat32Array());
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.houseHullStart, this.buffer.houseHullNumItems);
+        gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.houseRoofStart, this.buffer.houseRoofNumItems);
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.houseDoorStart, this.buffer.houseDoorNumItems);
+
+        gl.enable(gl.CULL_FACE);
+
         // frustum wireframe
         gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.demoCamera.frustumRenderTransform.getAsFloat32Array());
         gl.drawArrays(gl.LINES, this.buffer.frustumWireFrameStart, renderer.buffer.frustumWireFrameNumItems);
 
         // frustum faces
-        gl.enable(gl.CULL_FACE);
         gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.frustumFacesStart, this.buffer.frustumFacesNumItems);
         gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.frustumBottomFaceStart, this.buffer.frustumBottomFaceNumItems);
         gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.frustumTopFaceStart, this.buffer.frustumTopFaceNumItems);
+
         gl.disable(gl.CULL_FACE);
 
         gl.flush();
