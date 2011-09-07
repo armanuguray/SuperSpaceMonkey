@@ -786,6 +786,7 @@ function Renderer(canvas1, canvas2) {
         gl.uniformMatrix4fv(gl.program.projection_handle, false, this.finalProjection.getAsFloat32Array());
         this.demoCamera.projection.$matrix.m33 = m33;
         this.demoCamera.projection.$matrix.m43 = m43;
+
         gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.identity.getAsFloat32Array());
 
         // house
