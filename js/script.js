@@ -41,7 +41,7 @@ function main() {
         // create markup          
         markup = '';
         var section_titles = [ 'Field of View', 'Clipping', 'Eye', 'Look', 'Up', 'Camera Mode' ];
-        var content_titles = [[ 'Width:', 'Height:' ],
+        var content_titles = [[ 'Width Angle:', 'Height Angle:' ],
                               [ 'Near:', 'Far:' ],
                               ['X:', 'Y:', 'Z:'],
                               ['X:', 'Y:', 'Z:'],
@@ -64,7 +64,7 @@ function main() {
             for (var j = 0; j < titles.length; j++) {
                 var id = ids[j];
                 markup += '<div class="region"';
-                markup += '><label for="' + id + '-amount">' + titles[j] + '</label> \
+                markup += '><label for="' + id + '-amount" id="'+ id + '-amount-label">' + titles[j] + '</label> \
                             <input type="text" id="' + id + '-amount" class="amount" readonly="readonly"/> \
                             <div id="' + id + '-slider" class="slider"/></div>';
             }
@@ -84,11 +84,13 @@ function main() {
                 $("#width-slider").slider("option", "step", 1);
                 var wval = 20 * $("#width-slider").slider("option", "value");
                 $("#width-amount").val(wval);
+                $("#width-amount-label").html('Width Angle:');
                 $("#width-slider").slider("option", "value", wval);
                 $("#height-slider").slider("option", "min", 1);
                 $("#height-slider").slider("option", "max", 120);
                 $("#height-slider").slider("option", "step", 1);
                 var hval = 20 * $("#height-slider").slider("option", "value");
+                $("#height-amount-label").html('Height Angle:');
                 $("#height-amount").val(hval);
                 $("#height-slider").slider("option", "value", hval);
                 renderer.demoCamera.mode = 0;
@@ -105,10 +107,12 @@ function main() {
                 $("#width-slider").slider("option", "step", 0.1);
                 var wval = $("#width-slider").slider("option", "value") / 20;
                 $("#width-amount").val(wval);
+                $("#width-amount-label").html('Width:');
                 $("#width-slider").slider("option", "value", wval);
                 $("#height-slider").slider("option", "min", 0.1);
                 $("#height-slider").slider("option", "max", 6);
                 $("#height-slider").slider("option", "step", 0.1);
+                $("#height-amount-label").html('Height:');
                 var hval = $("#height-slider").slider("option", "value") / 20;
                 $("#height-amount").val(hval);
                 $("#height-slider").slider("option", "value", hval);
