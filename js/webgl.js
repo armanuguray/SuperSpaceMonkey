@@ -195,8 +195,10 @@ function DemoFrustumCamera() {
 
     this.modelview = new J3DIMatrix4();
     this.projection = new J3DIMatrix4();
+    this.finalModeling = new J3DIMatrix4();
     this.modelview.makeIdentity();
     this.projection.makeIdentity();
+    this.finalModeling.makeIdentity();
 
     this.step = 0;
     this.mode = 0;
@@ -261,10 +263,13 @@ DemoFrustumCamera.prototype.updateFrustumTransform = function(step) {
     // update the rendering transform
     this.step = step;
     this.frustumRenderTransform.makeIdentity();
+    this.finalModeling.makeIdentity();
     for (var i = 3 - this.mode; i >= 0 + step; i--) {
+        if (i == 0 || i == 1) this.finalModeling.multiply(this.matrices[i]);
         this.frustumRenderTransform.multiply(this.matrices[i]);
     }
     this.frustumRenderTransform.invert();
+    this.finalModeling.invert();
 
     this.finalTransform.makeIdentity();
     for (var i = step - 1; i >= 0; i--) {
@@ -641,6 +646,47 @@ function Renderer(canvas1, canvas2) {
         renderer.buffer.houseDoorStart = renderer.buffer.houseRoofStart + renderer.buffer.houseRoofNumItems;
         renderer.buffer.houseDoorNumItems = buffer.length/stride - renderer.buffer.houseDoorStart;
 
+        // camera model
+        // body
+        buffer.push(-0.05, 0.05, 0.05,       0.3,0.3,0.3,1,
+                    -0.05,-0.05, 0.05,       0.3,0.3,0.3,1,
+                     0.05, 0.05, 0.05,       0.3,0.3,0.3,1,
+                     0.05,-0.05, 0.05,       0.3,0.3,0.3,1,
+                     0.05, 0.05, 0.0,        0.3,0.3,0.3,1,
+                     0.05,-0.05, 0.0,        0.3,0.3,0.3,1,
+                    -0.05, 0.05, 0.0,        0.3,0.3,0.3,1,
+                    -0.05,-0.05, 0.0,        0.3,0.3,0.3,1,
+                    -0.05, 0.05, 0.05,       0.3,0.3,0.3,1,
+                    -0.05,-0.05, 0.05,       0.3,0.3,0.3,1,
+                    -0.05,-0.05, 0.0,        0.3,0.3,0.3,1,
+                     0.05,-0.05, 0.05,       0.3,0.3,0.3,1,
+                     0.05,-0.05, 0.0,        0.3,0.3,0.3,1);
+
+        renderer.buffer.cameraBodyStart = renderer.buffer.houseDoorStart + renderer.buffer.houseDoorNumItems;
+        renderer.buffer.cameraBodyNumItems = buffer.length/stride - renderer.buffer.cameraBodyStart;
+
+        buffer.push(-0.05, 0.05, 0.05,       0.3,0.3,0.3,1,
+                    -0.05, 0.05, 0.0,        0.3,0.3,0.3,1,
+                     0.05, 0.05, 0.05,       0.3,0.3,0.3,1,
+                     0.05, 0.05, 0.0,        0.3,0.3,0.3,1);
+
+        renderer.buffer.cameraBodyTopStart = renderer.buffer.cameraBodyStart + renderer.buffer.cameraBodyNumItems;
+        renderer.buffer.cameraBodyTopNumItems = buffer.length/stride - renderer.buffer.cameraBodyTopStart;
+
+        buffer.push( 0, 0, 0.025,           0,0,0,1,
+                    -0.025,     0,-0.05,    0,0,0,1,
+                    -0.018,-0.018,-0.05,    0,0,0,1,
+                         0,-0.025,-0.05,    0,0,0,1,
+                     0.018,-0.018,-0.05,    0,0,0,1,
+                     0.025,     0,-0.05,    0,0,0,1,
+                     0.018, 0.018,-0.05,    0,0,0,1,
+                         0, 0.025,-0.05,    0,0,0,1,
+                    -0.018, 0.018,-0.05,    0,0,0,1,
+                    -0.025,     0,-0.05,    0,0,0,1);
+
+        renderer.buffer.cameraConeStart = renderer.buffer.cameraBodyTopStart + renderer.buffer.cameraBodyTopNumItems;
+        renderer.buffer.cameraConeNumItems = buffer.length/stride - renderer.buffer.cameraConeStart;
+
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(buffer), gl.STATIC_DRAW);
 
         renderer.buffer.vertexSize = 3;
@@ -747,6 +793,12 @@ function Renderer(canvas1, canvas2) {
         gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.houseHullStart, this.buffer.houseHullNumItems);
         gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.houseRoofStart, this.buffer.houseRoofNumItems);
         gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.houseDoorStart, this.buffer.houseDoorNumItems);
+
+        // camera model
+        gl.uniformMatrix4fv(gl.program.ctm_handle, false, this.demoCamera.finalModeling.getAsFloat32Array());
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.cameraBodyStart, this.buffer.cameraBodyNumItems);
+        gl.drawArrays(gl.TRIANGLE_STRIP, this.buffer.cameraBodyTopStart, this.buffer.cameraBodyTopNumItems);
+        gl.drawArrays(gl.TRIANGLE_FAN, this.buffer.cameraConeStart, this.buffer.cameraConeNumItems);
 
         gl.enable(gl.CULL_FACE);
 
