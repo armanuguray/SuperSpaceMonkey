@@ -161,13 +161,13 @@ function main() {
         $( "#height-slider" ).slider(slider_options);
         slider_options.value = 1;
         slider_options.min = 0.1;
-        slider_options.max = 8.0;
+        slider_options.max = 10.0;
         slider_options['slide'] = function (event, ui) { $("#near-amount").val(ui.value); renderer.demoCamera.setNear(ui.value); };
         slider_options.step = 0.1;
         $( "#near-slider" ).slider(slider_options);
         slider_options.value = 6;
         slider_options.min = 0.1;
-        slider_options.max = 8.0;
+        slider_options.max = 20.0;
         slider_options['slide'] = function (event, ui) { $("#far-amount").val(ui.value); renderer.demoCamera.setFar(ui.value); };
         $( "#far-slider" ).slider(slider_options);
 
