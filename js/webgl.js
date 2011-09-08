@@ -164,15 +164,15 @@ Camera.prototype.originOrbitingRotate = function(deltaX, deltaY) {
  * This is a camera that maintains individual camera matrices to demo individual transformation steps
  */
 function DemoFrustumCamera() {
-    this.eye = new J3DIVector3(-1.4,1.5,0.8);
+    this.eye = new J3DIVector3(-1.3,1.3,0.8);
     this.look = new J3DIVector3(0.3,-0.1,-1);
     this.up = new J3DIVector3(0,1,0);
     this.u = new J3DIVector3(1,0,0);
     this.v = new J3DIVector3(0,1,0);
     this.w = new J3DIVector3(0,0,1);
 
-    this.height = 1;
-    this.width = 1;
+    this.height = 45;
+    this.width = 45;
     this.near = 1;
     this.far = 6;
 
@@ -199,6 +199,7 @@ function DemoFrustumCamera() {
     this.projection.makeIdentity();
 
     this.step = 0;
+    this.mode = 0;
     this.lookAt(this.eye, this.look, this.up);
     this.computeProjectionMatrices();
 }
@@ -225,11 +226,17 @@ DemoFrustumCamera.prototype.computeModelviewMatrices = function() {
 };
 
 DemoFrustumCamera.prototype.computeProjectionMatrices = function() {
-    var w = Math.tan(this.width/2.0) * this.far,
-        h = Math.tan(this.height/2.0) * this.far,
-        x = 1.0/w,
-        y = 1.0/h,
-        z = 1.0/this.far,
+
+    if (this.mode == 0) {
+        var w = Math.tan(Math.PI * this.width/360.0) * this.far,
+            h = Math.tan(Math.PI * this.height/360.0) * this.far,
+            x = 1.0/w,
+            y = 1.0/h;
+    } else {
+        var x = 2.0/this.width,
+            y = 2.0/this.height;
+    }
+    var z = 1.0/this.far,
         c = -this.near/this.far;
 
     this.matrices[2].load([x,0,0,0,
@@ -242,9 +249,9 @@ DemoFrustumCamera.prototype.computeProjectionMatrices = function() {
                            0,0, 1/(c+1),-1,
                            0,0,-c/(c+1), 0]);
 
-    
     this.projection.makeIdentity();
-    this.projection.multiply(this.matrices[3]);
+    if (this.mode == 0)
+        this.projection.multiply(this.matrices[3]);
     this.projection.multiply(this.matrices[2]);
 
     this.updateFrustumTransform(this.step);
@@ -254,7 +261,7 @@ DemoFrustumCamera.prototype.updateFrustumTransform = function(step) {
     // update the rendering transform
     this.step = step;
     this.frustumRenderTransform.makeIdentity();
-    for (var i = 3; i >= 0 + step; i--) {
+    for (var i = 3 - this.mode; i >= 0 + step; i--) {
         this.frustumRenderTransform.multiply(this.matrices[i]);
     }
     this.frustumRenderTransform.invert();
