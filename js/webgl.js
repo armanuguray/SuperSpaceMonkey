@@ -139,25 +139,27 @@ Camera.prototype.originOrbitingLookVectorTranslate = function(delta) {
 };
 
 Camera.prototype.originOrbitingRotate = function(deltaX, deltaY) {
-    var mv = new J3DIMatrix4(this.modelview);
-    var matrix = new J3DIMatrix4(this.projection);
-    matrix.multiply(mv);
-    matrix.invert();
+    if (deltaX != 0 || deltaY != 0) {
+        var mv = new J3DIMatrix4(this.modelview);
+        var matrix = new J3DIMatrix4(this.projection);
+        matrix.multiply(mv);
+        matrix.invert();
 
-    vec = new J3DIVector3(deltaX, deltaY, 0);
-    vec.normalize();
-    vec.multVecMatrix(matrix);
-    vec.load(-this.eye[0] + vec[0], -this.eye[1] + vec[1], -this.eye[2] + vec[2]);
-    vec.normalize();
+        vec = new J3DIVector3(deltaX, deltaY, 0);
+        vec.normalize();
+        vec.multVecMatrix(matrix);
+        vec.load(-this.eye[0] + vec[0], -this.eye[1] + vec[1], -this.eye[2] + vec[2]);
+        vec.normalize();
 
-    vec.cross(this.look);
-    vec.normalize();
-    matrix.makeIdentity();
-    matrix.rotate(0.1 * Math.sqrt(deltaX*deltaX + deltaY*deltaY), vec[0], vec[1], vec[2]);
-    this.eye.multVecMatrix(matrix);
-    this.lookAt(this.eye[0], this.eye[1], this.eye[2],
-                0,0,0,
-                0,1,0);
+        vec.cross(this.look);
+        vec.normalize();
+        matrix.makeIdentity();
+        matrix.rotate(0.1 * Math.sqrt(deltaX*deltaX + deltaY*deltaY), vec[0], vec[1], vec[2]);
+        this.eye.multVecMatrix(matrix);
+        this.lookAt(this.eye[0], this.eye[1], this.eye[2],
+                    0,0,0,
+                    0,1,0);
+    }
 };
 
 /**
@@ -898,6 +900,7 @@ function Renderer(canvas1, canvas2) {
         this.mouseIsDown = false;
     };
 
+    this.isScrolling = false;
     this.handleMouseWheel = function(e) {
         var delta = e.detail? e.detail*(-10) : 0.1 * e.wheelDelta;
         renderer.dolleyCamera.originOrbitingLookVectorTranslate(0.005 * delta);
