@@ -118,6 +118,8 @@ Camera.prototype.lookAt = function(eyex, eyey, eyez, centerx, centery, centerz, 
 
     this.modelview.makeIdentity();
     this.modelview.lookat(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
+    
+     if (isNaN(this.modelview.$matrix.m11)) throw new function() { this.message = "FUCK!"; };
 };
 
 Camera.prototype.perspective = function(fovy, aspect, near, far) {
