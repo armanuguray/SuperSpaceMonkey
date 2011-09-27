@@ -120,10 +120,11 @@ function main() {
                 if (renderer.demoCamera.step == 4) {
                     $("#trans-step").html(trans_steps[3]);
                     renderer.demoCamera.step = 3;
-                }
+                } 
                 renderer.demoCamera.width = wval;
                 renderer.demoCamera.height = hval;
             }
+            $("#camtrans-slider-panel .slider").slider("option", "value", renderer.demoCamera.step);
             renderer.demoCamera.computeProjectionMatrices();
         });
 
