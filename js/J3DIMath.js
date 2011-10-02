@@ -67,6 +67,8 @@
                                                             // (angle is in degrees)
         void multiply(in CanvasMatrix matrix);              // multiply the matrix by the passed matrix on the right
         void divide(in float divisor);                      // divide the matrix by the passed divisor
+        void add(in J3DIMatrix4 m);                         // add the passed matrix to this
+        void subtract(in J3DIMatrix4 a, in J3DIMatrix4 b);  // subtract b from a and the put the result in this matrix
         void ortho(in float left, in float right,           // multiply the matrix by the passed ortho values on the right
                    in float bottom, in float top,
                    in float near, in float far);
@@ -606,6 +608,52 @@ J3DIMatrix4.prototype.divide = function(divisor)
     this.$matrix.m43 /= divisor;
     this.$matrix.m44 /= divisor;
 
+}
+
+J3DIMatrix4.prototype.subtract = function (a, b)
+{ 
+    this.$matrix.m11 = a.$matrix.m11 - b.$matrix.m11;
+    this.$matrix.m12 = a.$matrix.m12 - b.$matrix.m12;
+    this.$matrix.m13 = a.$matrix.m13 - b.$matrix.m13;
+    this.$matrix.m14 = a.$matrix.m14 - b.$matrix.m14;
+
+    this.$matrix.m21 = a.$matrix.m21 - b.$matrix.m21;
+    this.$matrix.m22 = a.$matrix.m22 - b.$matrix.m22;
+    this.$matrix.m23 = a.$matrix.m23 - b.$matrix.m23;
+    this.$matrix.m24 = a.$matrix.m24 - b.$matrix.m24;
+
+    this.$matrix.m31 = a.$matrix.m31 - b.$matrix.m31;
+    this.$matrix.m32 = a.$matrix.m32 - b.$matrix.m32;
+    this.$matrix.m33 = a.$matrix.m33 - b.$matrix.m33;
+    this.$matrix.m34 = a.$matrix.m34 - b.$matrix.m34;
+
+    this.$matrix.m41 = a.$matrix.m41 - b.$matrix.m41;
+    this.$matrix.m42 = a.$matrix.m42 - b.$matrix.m42;
+    this.$matrix.m43 = a.$matrix.m43 - b.$matrix.m43;
+    this.$matrix.m44 = a.$matrix.m44 - b.$matrix.m44;
+}
+
+J3DIMatrix4.prototype.add = function(mat)
+{
+    this.$matrix.m11 += mat.$matrix.m11;
+    this.$matrix.m12 += mat.$matrix.m12;
+    this.$matrix.m13 += mat.$matrix.m13;
+    this.$matrix.m14 += mat.$matrix.m14;
+
+    this.$matrix.m21 += mat.$matrix.m21;
+    this.$matrix.m22 += mat.$matrix.m22;
+    this.$matrix.m23 += mat.$matrix.m23;
+    this.$matrix.m24 += mat.$matrix.m24;
+
+    this.$matrix.m31 += mat.$matrix.m31;
+    this.$matrix.m32 += mat.$matrix.m32;
+    this.$matrix.m33 += mat.$matrix.m33;
+    this.$matrix.m34 += mat.$matrix.m34;
+
+    this.$matrix.m41 += mat.$matrix.m41;
+    this.$matrix.m42 += mat.$matrix.m42;
+    this.$matrix.m43 += mat.$matrix.m43;
+    this.$matrix.m44 += mat.$matrix.m44;
 }
 
 J3DIMatrix4.prototype.ortho = function(left, right, bottom, top, near, far)

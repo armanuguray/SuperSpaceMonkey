@@ -224,7 +224,7 @@ function main() {
                            value: 0,
                            slide: function (event, ui) {
                                 $("#trans-step").html(trans_steps[ui.value]);
-                                renderer.demoCamera.updateFrustumTransform(ui.value);
+                                renderer.demoCamera.changeTransformationStepAnimated(ui.value);
                            }};
         $("#camtrans-slider-panel .slider").slider(slider_options);
         $("#trans-step").html(trans_steps[0]);

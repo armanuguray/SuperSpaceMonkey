@@ -189,23 +189,34 @@ function DemoFrustumCamera() {
     // easier to define it in camera space and obtain the world space
     // positions from there
     this.frustumRenderTransform = new J3DIMatrix4();
-    this.frustumRenderTransform.makeIdentity();
+    this.frustumRenderTransform.makeIdentity(); /* used to render the frustum */
 
     // this is the final transform
     this.finalTransform = new J3DIMatrix4();
-    this.finalTransform.makeIdentity();
+    this.finalTransform.makeIdentity(); /* used to render the house */
 
     this.modelview = new J3DIMatrix4();
     this.projection = new J3DIMatrix4();
     this.finalModeling = new J3DIMatrix4();
     this.modelview.makeIdentity();
     this.projection.makeIdentity();
-    this.finalModeling.makeIdentity();
+    this.finalModeling.makeIdentity(); /* used to render the little camera model */
+
+    this.animating = false;
+    this.frustumRenderTransformStep = new J3DIMatrix4();
+    this.finalTransformStep = new J3DIMatrix4();
+    this.finalModelingStep = new J3DIMatrix4();
+    this.targetFrustumRenderTransform = new J3DIMatrix4();
+    this.targetFinalTransform = new J3DIMatrix4();
+    this.targetFinalModeling = new J3DIMatrix4(); 
 
     this.step = 0;
     this.mode = 0;
     this.lookAt(this.eye, this.look, this.up);
     this.computeProjectionMatrices();
+
+    this.animationStep = 0;
+    this.numAnimationSteps = 10;
 }
 
 DemoFrustumCamera.prototype.computeModelviewMatrices = function() {
@@ -261,8 +272,59 @@ DemoFrustumCamera.prototype.computeProjectionMatrices = function() {
     this.updateFrustumTransform(this.step);
 };
 
+DemoFrustumCamera.prototype.changeTransformationStepAnimated = function(step) {
+    // compute target matrices
+    this.step = step;
+  
+    this.targetFrustumRenderTransform.makeIdentity();
+    this.targetFinalModeling.makeIdentity();
+    this.targetFinalTransform.makeIdentity();
+    for (var i = 3 - this.mode; i >= 0 + step; i--) {
+        if (i == 0 || i == 1) this.targetFinalModeling.multiply(this.matrices[i]);
+        this.targetFrustumRenderTransform.multiply(this.matrices[i]);
+    }
+    this.targetFrustumRenderTransform.invert();
+    this.targetFinalModeling.invert();
+
+    for (var i = step - 1; i >= 0; i--) {
+        this.targetFinalTransform.multiply(this.matrices[i]);
+    }
+
+    this.frustumRenderTransformStep.subtract(this.targetFrustumRenderTransform, this.frustumRenderTransform);
+    this.finalModelingStep.subtract(this.targetFinalModeling, this.finalModeling);
+    this.finalTransformStep.subtract(this.targetFinalTransform, this.finalTransform);
+
+    var steps = this.numAnimationSteps;
+
+    this.frustumRenderTransformStep.divide(steps);
+    this.finalModelingStep.divide(steps);
+    this.finalTransformStep.divide(steps);
+
+    this.animationStep = 0;
+    this.animating = true;
+};
+
+DemoFrustumCamera.prototype.stepAnimations = function() {
+    if (this.animating) {
+        if (this.animationStep < this.numAnimationSteps) {
+            this.frustumRenderTransform.add(this.frustumRenderTransformStep);
+            this.finalModeling.add(this.finalModelingStep);
+            this.finalTransform.add(this.finalTransformStep);
+            this.animationStep++;  
+        }
+        if (this.animationStep == this.numAnimationSteps - 1) {
+            this.animating = false;
+        
+            this.frustumRenderTransform.load(this.targetFrustumRenderTransform);
+            this.finalModeling.load(this.targetFinalModeling);
+            this.finalTransform.load(this.targetFinalTransform);
+        }
+    }
+};
+
 DemoFrustumCamera.prototype.updateFrustumTransform = function(step) {
     // update the rendering transform
+    this.animating = false;
     this.step = step;
     this.frustumRenderTransform.makeIdentity();
     this.finalModeling.makeIdentity();
@@ -923,12 +985,12 @@ function tick() {
     var timeAtThisFrame = new Date().getTime();
     var timeSinceLastDoLogic = (timeAtThisFrame - timeAtLastFrame) + leftover;
     var catchUpFrameCount = Math.floor(timeSinceLastDoLogic / idealTimePerFrame);
-/*
+
     for(i = 0 ; i < catchUpFrameCount; i++){
-        controller.doLogic();
+        renderer.demoCamera.stepAnimations();
         frames++;
     }
-*/
+
     renderer.render();
 
     leftover = timeSinceLastDoLogic - (catchUpFrameCount * idealTimePerFrame);

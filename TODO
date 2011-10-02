@@ -1,4 +1,4 @@
 [DONE] Fix bug where the state breaks when switching back and forth between camera modes at stage 3 (unitize)
-[OPEN] Fix bug that causes the dolley camera modelview matrix to be NaN
+[DONE] Fix bug that causes the dolley camera modelview matrix to be NaN
 [OPEN] Add animated transitions
 [OPEN] Add pitch/roll/yaw control to camera using dials
